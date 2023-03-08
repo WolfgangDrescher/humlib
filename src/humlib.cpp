@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Do  9 Feb 2023 20:29:58 CET
+// Last Modified: Mi  8 Mär 2023 11:28:40 CET
 // Filename:      /include/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/src/humlib.cpp
 // Syntax:        C++11
@@ -51423,7 +51423,7 @@ PixelColor PixelColor::getColor(const string& colorstring) {
 	const string& cs = colorstring;
 
 	char fc = '\0';
-	if (cs.empty()) {
+	if (!cs.empty()) {
 		fc = cs[0];
 	}
 
@@ -51456,6 +51456,7 @@ PixelColor PixelColor::getColor(const string& colorstring) {
 	if (cs == "darkcyan"            ) { output.setColor("#008b8b");  return output; }
 	if (cs == "darkgoldenrod"       ) { output.setColor("#b8860b");  return output; }
 	if (cs == "darkgray"            ) { output.setColor("#a9a9a9");  return output; }
+	if (cs == "darkgrey"            ) { output.setColor("#a9a9a9");  return output; }
 	if (cs == "darkgreen"           ) { output.setColor("#006400");  return output; }
 	if (cs == "darkkhaki"           ) { output.setColor("#bdb76b");  return output; }
 	if (cs == "darkmagenta"         ) { output.setColor("#8b008b");  return output; }
@@ -51467,11 +51468,13 @@ PixelColor PixelColor::getColor(const string& colorstring) {
 	if (cs == "darkseagreen"        ) { output.setColor("#8dbc8f");  return output; }
 	if (cs == "darkslateblue"       ) { output.setColor("#483d8b");  return output; }
 	if (cs == "darkslategray"       ) { output.setColor("#2e4e4e");  return output; }
+	if (cs == "darkslategrey"       ) { output.setColor("#2e4e4e");  return output; }
 	if (cs == "darkturquoise"       ) { output.setColor("#00ded1");  return output; }
 	if (cs == "darkviolet"          ) { output.setColor("#9400d3");  return output; }
 	if (cs == "deeppink"            ) { output.setColor("#ff1493");  return output; }
 	if (cs == "deepskyblue"         ) { output.setColor("#00bfff");  return output; }
 	if (cs == "dimgray"             ) { output.setColor("#696969");  return output; }
+	if (cs == "dimgrey"             ) { output.setColor("#696969");  return output; }
 	if (cs == "dodgerblue"          ) { output.setColor("#1e90ff");  return output; }
 	break; case 'f':
 	if (cs == "firebrick"           ) { output.setColor("#b22222");  return output; }
@@ -51484,7 +51487,7 @@ PixelColor PixelColor::getColor(const string& colorstring) {
 	if (cs == "gold"                ) { output.setColor("#ffd700");  return output; }
 	if (cs == "goldenrod"           ) { output.setColor("#daa520");  return output; }
 	if (cs == "gray"                ) { output.setColor("#808080");  return output; }
-	if (cs == "gray"                ) { output.setColor("#808080");  return output; }
+	if (cs == "grey"                ) { output.setColor("#808080");  return output; }
 	if (cs == "green"               ) { output.setColor("#008000");  return output; }
 	if (cs == "greenyellow"         ) { output.setColor("#adff2f");  return output; }
 	break; case 'h':
@@ -51513,6 +51516,7 @@ PixelColor PixelColor::getColor(const string& colorstring) {
 	if (cs == "lightseagreen"       ) { output.setColor("#20b2aa");  return output; }
 	if (cs == "lightskyblue"        ) { output.setColor("#87cefa");  return output; }
 	if (cs == "lightslategray"      ) { output.setColor("#778899");  return output; }
+	if (cs == "lightslategrey"      ) { output.setColor("#778899");  return output; }
 	if (cs == "lightsteelblue"      ) { output.setColor("#b0c4de");  return output; }
 	if (cs == "lightyellow"         ) { output.setColor("#ffffe0");  return output; }
 	if (cs == "lime"                ) { output.setColor("#00ff00");  return output; }
@@ -78710,22 +78714,19 @@ vector<FiguredBassNumber*> Tool_fb::getAbbreviatedNumbers(const vector<FiguredBa
 
 	vector<FiguredBassNumber*> abbreviatedNumbers;
 
-	vector<FiguredBassAbbreviationMapping*> mappings = FiguredBassAbbreviationMapping::s_mappings;
-
 	string numberString = getNumberString(numbers);
 
 	// Check if an abbreviation exists for passed numbers
-	auto it = find_if(mappings.begin(), mappings.end(), [numberString](FiguredBassAbbreviationMapping* abbr) {
-		return abbr->m_str == numberString;
+	auto it = find_if(FiguredBassAbbreviationMapping::s_mappings.begin(), FiguredBassAbbreviationMapping::s_mappings.end(), [&numberString](const FiguredBassAbbreviationMapping& abbr) {
+		return abbr.m_str == numberString;
 	});
 
-	if (it != mappings.end()) {
-		int index = it - mappings.begin();
-		FiguredBassAbbreviationMapping* abbr = mappings[index];
+	if (it != FiguredBassAbbreviationMapping::s_mappings.end()) {
+		const FiguredBassAbbreviationMapping& abbr = *it;
 		bool aQ = m_accidentalsQ;
 		// Store numbers to display by the abbreviation mapping in abbreviatedNumbers
-		copy_if(numbers.begin(), numbers.end(), back_inserter(abbreviatedNumbers), [abbr, aQ](FiguredBassNumber* num) {
-			vector<int> nums = abbr->m_numbers;
+		copy_if(numbers.begin(), numbers.end(), back_inserter(abbreviatedNumbers), [&abbr, aQ](FiguredBassNumber* num) {
+			const vector<int>& nums = abbr.m_numbers;
 			// Show numbers if they are part of the abbreviation mapping or if they have an accidental
 			return (find(nums.begin(), nums.end(), num->getNumberWithinOctave()) != nums.end()) || (num->m_showAccidentals && aQ);
 		});
@@ -78928,21 +78929,21 @@ FiguredBassAbbreviationMapping::FiguredBassAbbreviationMapping(string s, vector<
 // FiguredBassAbbreviationMapping::s_mappings -- Mapping to abbreviate figured bass numbers
 //
 
-vector<FiguredBassAbbreviationMapping*> FiguredBassAbbreviationMapping::s_mappings = {
-	new FiguredBassAbbreviationMapping("3", {}),
-	new FiguredBassAbbreviationMapping("5", {}),
-	new FiguredBassAbbreviationMapping("5 3", {}),
-	new FiguredBassAbbreviationMapping("6 3", {6}),
-	new FiguredBassAbbreviationMapping("5 4", {4}),
-	new FiguredBassAbbreviationMapping("7 5 3", {7}),
-	new FiguredBassAbbreviationMapping("7 3", {7}),
-	new FiguredBassAbbreviationMapping("7 5", {7}),
-	new FiguredBassAbbreviationMapping("6 5 3", {6, 5}),
-	new FiguredBassAbbreviationMapping("6 4 3", {4, 3}),
-	new FiguredBassAbbreviationMapping("6 4 2", {4, 2}),
-	new FiguredBassAbbreviationMapping("9 5 3", {9}),
-	new FiguredBassAbbreviationMapping("9 5", {9}),
-	new FiguredBassAbbreviationMapping("9 3", {9}),
+const vector<FiguredBassAbbreviationMapping> FiguredBassAbbreviationMapping::s_mappings = {
+	FiguredBassAbbreviationMapping("3", {}),
+	FiguredBassAbbreviationMapping("5", {}),
+	FiguredBassAbbreviationMapping("5 3", {}),
+	FiguredBassAbbreviationMapping("6 3", {6}),
+	FiguredBassAbbreviationMapping("5 4", {4}),
+	FiguredBassAbbreviationMapping("7 5 3", {7}),
+	FiguredBassAbbreviationMapping("7 3", {7}),
+	FiguredBassAbbreviationMapping("7 5", {7}),
+	FiguredBassAbbreviationMapping("6 5 3", {6, 5}),
+	FiguredBassAbbreviationMapping("6 4 3", {4, 3}),
+	FiguredBassAbbreviationMapping("6 4 2", {4, 2}),
+	FiguredBassAbbreviationMapping("9 5 3", {9}),
+	FiguredBassAbbreviationMapping("9 5", {9}),
+	FiguredBassAbbreviationMapping("9 3", {9}),
 };
 
 
@@ -94457,6 +94458,10 @@ void Tool_msearch::addMusicSearchSummary(HumdrumFile& infile, int mcount, const 
 
 void Tool_msearch::addMatch(HumdrumFile& infile, vector<NoteCell*>& match) {
 	if (match.empty()) {
+		return;
+	}
+	if (match.back() == NULL) {
+		// strange problem
 		return;
 	}
 	int startIndex   = match.at(0)->getLineIndex();
