@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Mi  8 Mär 2023 11:28:40 CET
+// Last Modified: Di 14 Mär 2023 12:21:01 CET
 // Filename:      humlib.h
 // URL:           https://github.com/craigsapp/humlib/blob/master/include/humlib.h
 // Syntax:        C++11
@@ -1654,6 +1654,7 @@ class HumdrumToken : public std::string, public HumHash {
 		bool     isKernLike                (void) const;
 		bool     isMens                    (void) const;
 		bool     isMensLike                (void) const;
+		bool     isStaffLike               (void) const { return isKernLike() && isMensLike(); }
 		std::string   getSpineInfo         (void) const;
 		int      getTrack                  (void) const;
 		int      getSubtrack               (void) const;
@@ -6203,6 +6204,35 @@ class Tool_colorgroups : public HumTool {
 	protected:
 		void     processFile       (HumdrumFile& infile);
 		void     initialize        (void);
+
+};
+
+
+class Tool_colorthirds : public HumTool {
+	public:
+		         Tool_colorthirds  (void);
+		        ~Tool_colorthirds  () {};
+
+		bool     run               (HumdrumFileSet& infiles);
+		bool     run               (HumdrumFile& infile);
+		bool     run               (const string& indata, ostream& out);
+		bool     run               (HumdrumFile& infile, ostream& out);
+
+	protected:
+		void             initialize        (void);
+		void             processFile       (HumdrumFile& infile);
+		std::vector<int> getMidiNotes(std::vector<HTp>& kernNotes);
+		std::vector<int> getChordPositions(std::vector<int>& midiNotes);
+		void             labelChordPositions(std::vector<HTp>& kernNotes, std::vector<int>& chordPositions);
+
+	private:
+		std::string m_root_marker = "@";
+		std::string m_third_marker = "N";
+		std::string m_fifth_marker = "Z";
+
+		std::string m_root_color = "crimson";
+		std::string m_third_color = "limegreen";
+		std::string m_fifth_color = "royalblue";
 
 };
 
