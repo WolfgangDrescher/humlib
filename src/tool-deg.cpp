@@ -151,10 +151,10 @@ void Tool_deg::initialize(void) {
 		}
 	}
 
-	if (getBoolean("forced-key")) {
+	if (getBoolean("force-key")) {
 		m_defaultKey.clear(); // override --default-key option
 
-		m_forcedKey = getString("forced-key");
+		m_forcedKey = getString("force-key");
 		if (!m_forcedKey.empty()) {
 			if (m_forcedKey[0] != '*') {
 				m_forcedKey = "*" + m_forcedKey;

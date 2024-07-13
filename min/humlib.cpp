@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Wed Jul  3 23:34:11 CEST 2024
+// Last Modified: Sa 13 Jul 2024 13:08:19 CEST
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -73007,10 +73007,10 @@ void Tool_deg::initialize(void) {
 		}
 	}
 
-	if (getBoolean("forced-key")) {
+	if (getBoolean("force-key")) {
 		m_defaultKey.clear(); // override --default-key option
 
-		m_forcedKey = getString("forced-key");
+		m_forcedKey = getString("force-key");
 		if (!m_forcedKey.empty()) {
 			if (m_forcedKey[0] != '*') {
 				m_forcedKey = "*" + m_forcedKey;
