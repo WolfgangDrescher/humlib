@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Fr 11 Okt 2024 08:59:19 CEST
+// Last Modified: Fr 11 Okt 2024 09:02:08 CEST
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -47768,6 +47768,8 @@ void MxmlEvent::setBarlineStyle(xml_node node) {
 		reportMeasureStyleToOwner(MeasureStyle::RepeatBackward);
 	} else if (repeat == +1) {
 		reportMeasureStyleToOwner(MeasureStyle::RepeatForward);
+	} else if (barstyle == "none") {
+		reportMeasureStyleToOwner(MeasureStyle::Invisible);
 	}
 }
 
