@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Fr 11 Okt 2024 00:16:02 CEST
+// Last Modified: Fr 11 Okt 2024 08:59:19 CEST
 // Filename:      min/humlib.h
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.h
 // Syntax:        C++11
@@ -8647,6 +8647,28 @@ class Tool_kernview : public HumTool {
 		std::string m_view_string;
 		std::string m_hide_string;
 
+};
+
+
+class Tool_lnnr : public HumTool {
+
+	public:
+		     Tool_lnnr (void);
+		     ~Tool_lnnr() {};
+
+		bool run       (HumdrumFileSet& infiles);
+		bool run       (HumdrumFile& infile);
+		bool run       (const string& indata, ostream& out);
+		bool run       (HumdrumFile& infile, ostream& out);
+
+	protected:
+		void           initialize  (void);
+        void           processFile (HumdrumFile& infile);
+		vector<string> getTrackData(HumdrumFile& infile);
+
+	private:
+		bool m_indexQ   = false;
+		bool m_prependQ = false;
 };
 
 
