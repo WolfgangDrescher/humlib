@@ -100,6 +100,7 @@ set(SRCS
 	src/tool-msearch.cpp
 	src/tool-musicxml2hum.cpp
 	src/tool-myank.cpp
+    src/tool-notemark.cpp
 	src/tool-recip.cpp
 	src/tool-restfill.cpp
 	src/tool-ruthfix.cpp
@@ -161,6 +162,7 @@ set(HDRS
 	include/tool-msearch.h
 	include/tool-musicxml2hum.h
 	include/tool-myank.h
+	include/tool-notemark.h
 	include/tool-recip.h
 	include/tool-restfill.h
 	include/tool-ruthfix.h
