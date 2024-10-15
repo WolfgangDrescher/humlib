@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Mo 14 Okt 2024 23:11:24 CEST
+// Last Modified: Di 15 Okt 2024 22:56:13 CEST
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -87018,6 +87018,8 @@ bool Tool_filter::run(HumdrumFileSet& infiles) {
 			RUNTOOL(modori, infile, commands[i].second, status);
 		} else if (commands[i].first == "msearch") {
 			RUNTOOL(msearch, infile, commands[i].second, status);
+		} else if (commands[i].first == "notemark") {
+			RUNTOOL(notemark, infile, commands[i].second, status);
 		} else if (commands[i].first == "nproof") {
 			RUNTOOL(nproof, infile, commands[i].second, status);
 		} else if (commands[i].first == "ordergps") {
@@ -115787,7 +115789,7 @@ void Tool_notemark::processFile(HumdrumFile& infile) {
 			if (line->isData()) {
 				vector<HTp> tokens;
 				line->getTokens(tokens);
-				for (int j = 0; j < tokens.size(); j++) {
+				for (auto j = 0; j < tokens.size(); j++) {
 					HTp token = tokens[j];
 					if (token->isNonNullData()) {
 						if (std::find(selectedSpineIndices.begin(), selectedSpineIndices.end(), token->getSpineIndex()) != selectedSpineIndices.end() || selectedSpineIndices.size() == 0) {
