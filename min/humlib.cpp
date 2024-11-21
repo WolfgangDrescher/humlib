@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Do 21 Nov 2024 21:17:25 CET
+// Last Modified: Do 21 Nov 2024 22:02:37 CET
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -126681,10 +126681,7 @@ bool Tool_shed::run(HumdrumFile& infile) {
 		cerr << "Error: -e option is required" << endl;
 		return false;
 	}
-	for (int i=0; i<(int)m_options.size(); i++) {
-		prepareSearch(i);
-		processFile(infile);
-	}
+	processFile(infile);
 	return true;
 }
 
@@ -126976,6 +126973,21 @@ vector<string> Tool_shed::addToExInterpList(void) {
 //
 
 void Tool_shed::processFile(HumdrumFile& infile) {
+	for (int i=0; i<(int)m_options.size(); i++) {
+		prepareSearch(i);
+		processExpression(infile);
+	}
+	m_humdrum_text << infile;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_shed::processExpression --
+//
+
+void Tool_shed::processExpression(HumdrumFile& infile) {
 	if (m_search == "") {
 		// nothing to do
 		return;
@@ -127021,9 +127033,6 @@ void Tool_shed::processFile(HumdrumFile& infile) {
 	if (m_modified) {
 		infile.createLinesFromTokens();
 	}
-
-	// needed only for command-line version of tool?:
-	m_humdrum_text << infile;
 }
 
 

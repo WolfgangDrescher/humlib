@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Do 21 Nov 2024 21:17:25 CET
+// Last Modified: Do 21 Nov 2024 22:02:37 CET
 // Filename:      min/humlib.h
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.h
 // Syntax:        C++11
@@ -10911,6 +10911,7 @@ class Tool_shed : public HumTool {
 
 	protected:
 		void    processFile                      (HumdrumFile& infile);
+		void    processExpression                (HumdrumFile& infile);
 		void    searchAndReplaceInterpretation   (HumdrumFile& infile);
 		void    searchAndReplaceExinterp         (HumdrumFile& infile);
 		void    searchAndReplaceData             (HumdrumFile& infile);
