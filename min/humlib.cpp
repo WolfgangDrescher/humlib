@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Do 21 Nov 2024 23:00:19 CET
+// Last Modified: Do 21 Nov 2024 23:00:44 CET
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -116101,10 +116101,14 @@ void Tool_notemark::processFile(HumdrumFile& infile) {
 				vector<HTp> tokens;
 				line->getTokens(tokens);
 				for (HTp& token : tokens) {
-					if (token->isNonNullData()) {
-						if (std::find(selectedSpineIndices.begin(), selectedSpineIndices.end(), token->getSpineIndex()) != selectedSpineIndices.end() || selectedSpineIndices.size() == 0) {
-							token->setText(token->getText() + m_signifier);
-							hasMarkers = true;
+					HTp resolvedToken = token->resolveNull();
+					if (resolvedToken->isNonNullData()) {
+						if (std::find(selectedSpineIndices.begin(), selectedSpineIndices.end(), resolvedToken->getSpineIndex()) != selectedSpineIndices.end() || selectedSpineIndices.size() == 0) {
+							std::string tokenText = resolvedToken->getText();
+							if (m_signifier.size() > tokenText.size() || tokenText.compare(tokenText.size() - m_signifier.size(), m_signifier.size(), m_signifier) != 0) {
+								resolvedToken->resolveNull()->setText(tokenText + m_signifier);
+								hasMarkers = true;
+							}
 						}
 					}
 				}
@@ -116113,10 +116117,11 @@ void Tool_notemark::processFile(HumdrumFile& infile) {
 		}
 	}
 
+	infile.createLinesFromTokens();
+
 	if (hasMarkers) {
 		infile.appendLine("!!!RDF**kern: " + m_signifier + " = marked note color=\"" + m_color + "\"");
 	}
-
 
 	m_humdrum_text << infile;
 
@@ -116134,6 +116139,9 @@ int Tool_notemark::getStartLineNumber(void) {
 	if (hre.search(m_lineRange, "^(\\d+)\\-(\\d+)$")) {
 		return hre.getMatchInt(1);
 	}
+	if (hre.search(m_lineRange, "^(\\d+)$")) {
+		return hre.getMatchInt(1);
+	}
 	return -1;
 }
 
@@ -116148,6 +116156,9 @@ int Tool_notemark::getEndLineNumber(void) {
 	HumRegex hre;
 	if (hre.search(m_lineRange, "^(\\d+)\\-(\\d+)$")) {
 		return hre.getMatchInt(2);
+	}
+	if (hre.search(m_lineRange, "^(\\d+)$")) {
+		return hre.getMatchInt(1);
 	}
 	return -1;
 }
