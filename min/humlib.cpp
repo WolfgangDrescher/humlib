@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Fri Nov 22 09:29:17 AM PST 2024
+// Last Modified: Di 17 Dez 2024 22:54:54 CET
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -113146,6 +113146,7 @@ Tool_myank::Tool_myank(void) {
 	define("d|double|dm|md|mdsep|mdseparator=b", "put double barline between non-consecutive measure segments");
 	define("m|b|measures|bars|measure|bar=s",    "measures to yank");
 	define("l|lines|line-range=s",               "line numbers range to yank (e.g. 40-50)");
+	define("beats|beat-range=s",                 "beats from start range to yank (e.g. 32-45)");
 	define("I|i|instrument=b",                   "Include instrument codes from start of data");
 	define("visible|not-invisible=b",            "do not make initial measure invisible");
 	define("B|noendbar=b",                       "do not print barline at end of data");
@@ -113327,12 +113328,13 @@ void Tool_myank::initialize(HumdrumFile& infile) {
 	m_section       =  getInteger("section");
 
 	m_lineRange     = getString("lines");
+	m_beatRange     = getString("beats");
 	m_hideStarting  = getBoolean("hide-starting");
 	m_hideEnding    = getBoolean("hide-ending");
 
 
 	if (!m_section) {
-		if (!(getBoolean("measures") || m_markQ) && !getBoolean("lines")) {
+		if (!(getBoolean("measures") || m_markQ) && !getBoolean("lines") && !getBoolean("beats")) {
 			// if -m option is not given, then --mark option presumed
 			m_markQ = 1;
 			// cerr << "Error: the -m option is required" << endl;
@@ -113361,9 +113363,9 @@ void Tool_myank::processFile(HumdrumFile& infile) {
 
 	string measurestring = getString("measures");
 
-	if (getBoolean("lines")) {
-		int startLineNumber = getStartLineNumber();
-		int endLineNumber = getEndLineNumber();
+	if (getBoolean("lines") || getBoolean("beats")) {
+		int startLineNumber = getStartLineNumber(infile);
+		int endLineNumber = getEndLineNumber(infile);
 		if ((startLineNumber > endLineNumber) || (endLineNumber > infile.getLineCount())) {
 			// Disallow when end line number is bigger then line count or when
 			// start line number greather than end line number
@@ -113466,8 +113468,19 @@ int Tool_myank::getBarNumberForLineNumber(int lineNumber) {
 // Tool_myank::getStartLineNumber -- Get start line number from --lines
 //
 
-int Tool_myank::getStartLineNumber(void) {
+int Tool_myank::getStartLineNumber(HumdrumFile& infile) {
 	HumRegex hre;
+	if (getBoolean("beats")) {
+		 if (hre.search(m_beatRange, "^(\\d+)\\-(\\d+)$")) {
+			int startBeat = hre.getMatchInt(1);
+			for (int i = 0; i < infile.getLineCount(); i++) {
+				HLp line = infile.getLine(i);
+				if (line->getDurationFromStart() >= startBeat) {
+					return line->getLineNumber();
+				}
+			}
+		}
+	}
 	if (hre.search(m_lineRange, "^(\\d+)\\-(\\d+)$")) {
 		return hre.getMatchInt(1);
 	}
@@ -113481,8 +113494,19 @@ int Tool_myank::getStartLineNumber(void) {
 // Tool_myank::getEndLineNumber -- Get end line number from --lines
 //
 
-int Tool_myank::getEndLineNumber(void) {
+int Tool_myank::getEndLineNumber(HumdrumFile& infile) {
 	HumRegex hre;
+	if (getBoolean("beats")) {
+		 if (hre.search(m_beatRange, "^(\\d+)\\-(\\d+)$")) {
+			int endBeat = hre.getMatchInt(2);
+			for (int i = infile.getLineCount() - 1; i >= 0; i--) {
+				HLp line = infile.getLine(i);
+				if (line->getDurationFromStart() <= endBeat) {
+					return line->getLineNumber();
+				}
+			}
+		}
+	}
 	if (hre.search(m_lineRange, "^(\\d+)\\-(\\d+)$")) {
 		return hre.getMatchInt(2);
 	}
@@ -113747,7 +113771,7 @@ void Tool_myank::myank(HumdrumFile& infile, vector<MeasureInfo>& outmeasures) {
 	int bartextcount = 0;
 	bool startLineHandled = false;
 
-	int lastLineIndex = getBoolean("lines") ? getEndLineNumber() - 1 : outmeasures[outmeasures.size() - 1].stop;
+	int lastLineIndex = getBoolean("lines") || getBoolean("beats") ? getEndLineNumber(infile) - 1 : outmeasures[outmeasures.size() - 1].stop;
 
 	// Find the actual last line of the selected section that is a line with
 	// data tokens
@@ -113772,10 +113796,10 @@ void Tool_myank::myank(HumdrumFile& infile, vector<MeasureInfo>& outmeasures) {
 		lastLineDurationsFromNoteStart[a] = token->getDurationFromNoteStart() + token->getLine()->getDuration();
 	}
 
-	int startLineNumber = getStartLineNumber();
-	int endLineNumber = getEndLineNumber();
+	int startLineNumber = getStartLineNumber(infile);
+	int endLineNumber = getEndLineNumber(infile);
 
-	if (getBoolean("lines")) {
+	if (getBoolean("lines") || getBoolean("beats")) {
 		int firstDataLineIndex = -1;
 		for (int b = startLineNumber - 1; b <= endLineNumber - 1; b++) {
 			if (infile.getLine(b)->isData()) {
@@ -113810,9 +113834,9 @@ void Tool_myank::myank(HumdrumFile& infile, vector<MeasureInfo>& outmeasures) {
 		} else {
 			reconcileStartingPosition(infile, outmeasures[0].start);
 		}
-		int startLine = getBoolean("lines") ? std::max(startLineNumber-1, outmeasures[h].start)
+		int startLine = getBoolean("lines") || getBoolean("beats") ? std::max(startLineNumber-1, outmeasures[h].start)
 			: outmeasures[h].start;
-		int endLine = getBoolean("lines") ? std::min(endLineNumber, outmeasures[h].stop)
+		int endLine = getBoolean("lines") || getBoolean("beats") ? std::min(endLineNumber, outmeasures[h].stop)
 			: outmeasures[h].stop;
 		for (i=startLine; i<endLine; i++) {
 			counter++;
@@ -113875,7 +113899,7 @@ void Tool_myank::myank(HumdrumFile& infile, vector<MeasureInfo>& outmeasures) {
 		lastbarnum = barnum;
 	}
 
-	if (getBoolean("lines") && (lastDataLine >= 0) &&
+	if ((getBoolean("lines") || getBoolean("beats")) && (lastDataLine >= 0) &&
 			(infile.getLine(lastDataLine)->getDurationToBarline() > infile.getLine(lastDataLine)->getDuration())) {
 		m_nolastbarQ = true;
 	}
@@ -115083,7 +115107,7 @@ void Tool_myank::getMeasureStartStop(vector<MeasureInfo>& measurelist, HumdrumFi
 	}
 
 	// allow "myank -l" when there are no measure numbers
-	if (getBoolean("lines") && measurelist.size() == 0) {
+	if ((getBoolean("lines") || getBoolean("beats")) && measurelist.size() == 0) {
 		current.clear();
 		current.num = 0;
 		current.start = 0;
@@ -115259,7 +115283,7 @@ void Tool_myank::expandMeasureOutList(vector<MeasureInfo>& measureout,
 			minmeasure = measurein[i].num;
 		}
 	}
-	if (maxmeasure <= 0 && !getBoolean("lines")) {
+	if (maxmeasure <= 0 && !getBoolean("lines") && !getBoolean("beats")) {
 		cerr << "Error: There are no measure numbers present in the data" << endl;
 		exit(1);
 	}

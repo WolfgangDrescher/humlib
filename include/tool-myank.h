@@ -161,8 +161,8 @@ class Tool_myank : public HumTool {
 
 		std::vector<int> analyzeBarNumbers  (HumdrumFile& infile);
 		int         getBarNumberForLineNumber(int lineNumber);
-		int         getStartLineNumber (void);
-		int         getEndLineNumber   (void);
+		int         getStartLineNumber (HumdrumFile& infile);
+		int         getEndLineNumber   (HumdrumFile& infile);
 		void        printDataLine      (HLp line, bool& startLineHandled, const std::vector<int>& lastLineResolvedTokenLineIndex, const std::vector<HumNum>& lastLineDurationsFromNoteStart);
 
 	private:
@@ -186,7 +186,8 @@ class Tool_myank : public HumTool {
 		std::vector<std::vector<MyCoord> > m_metstates;
 
 		std::string m_lineRange;              // used with -l option
-		std::vector<int> m_barNumbersPerLine;      // used with -l option
+		std::string m_beatRange;              // used with --beats option
+		std::vector<int> m_barNumbersPerLine; // used with -l option
 		bool m_hideStarting;                  // used with --hide-starting option
 		bool m_hideEnding;                    // used with --hide-ending option
 
