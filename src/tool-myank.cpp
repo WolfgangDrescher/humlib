@@ -368,7 +368,7 @@ int Tool_myank::getStartLineNumber(HumdrumFile& infile) {
 			int startBeat = hre.getMatchInt(1);
 			for (int i = 0; i < infile.getLineCount(); i++) {
 				HLp line = infile.getLine(i);
-				if (line->getDurationFromStart() >= startBeat) {
+				if (line->isData() && line->getDurationFromStart() >= startBeat) {
 					return line->getLineNumber();
 				}
 			}
@@ -394,7 +394,7 @@ int Tool_myank::getEndLineNumber(HumdrumFile& infile) {
 			int endBeat = hre.getMatchInt(2);
 			for (int i = infile.getLineCount() - 1; i >= 0; i--) {
 				HLp line = infile.getLine(i);
-				if (line->getDurationFromStart() <= endBeat) {
+				if (line->isData() && line->getDurationFromStart() <= endBeat) {
 					return line->getLineNumber();
 				}
 			}

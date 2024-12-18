@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Di 17 Dez 2024 22:54:54 CET
+// Last Modified: Mi 18 Dez 2024 23:32:18 CET
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -113475,7 +113475,7 @@ int Tool_myank::getStartLineNumber(HumdrumFile& infile) {
 			int startBeat = hre.getMatchInt(1);
 			for (int i = 0; i < infile.getLineCount(); i++) {
 				HLp line = infile.getLine(i);
-				if (line->getDurationFromStart() >= startBeat) {
+				if (line->isData() && line->getDurationFromStart() >= startBeat) {
 					return line->getLineNumber();
 				}
 			}
@@ -113501,7 +113501,7 @@ int Tool_myank::getEndLineNumber(HumdrumFile& infile) {
 			int endBeat = hre.getMatchInt(2);
 			for (int i = infile.getLineCount() - 1; i >= 0; i--) {
 				HLp line = infile.getLine(i);
-				if (line->getDurationFromStart() <= endBeat) {
+				if (line->isData() && line->getDurationFromStart() <= endBeat) {
 					return line->getLineNumber();
 				}
 			}
