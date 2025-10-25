@@ -51,7 +51,7 @@ TOOLDIR   = cli
 PUGIXML   = pugixml
 MIDIFILE  = midifile
 
-PREFLAGS  = -Wall
+PREFLAGS  = -Wall -Wsign-compare
 PREFLAGS += -O3
 PREFLAGS += -I$(MINDIR)
 PREFLAGS += -I$(INCDIR) -I$(INCDIR)/pugixml -I$(INCDIR)/midifile
@@ -61,6 +61,12 @@ PREFLAGS += -I$(INCDIR) -I$(INCDIR)/pugixml -I$(INCDIR)/midifile
 
 # using C++ 2011/2017 standard:
 PREFLAGS += -std=c++17
+
+# MacOS specific warnings
+ifeq ($(shell uname -s),Darwin)
+  PREFLAGS += -Wshorten-64-to-32
+  PREFLAGS += -Wsign-compare
+endif
 
 # Add -static flag to compile without dynamics libraries for better portability:
 #PREFLAGS += -static

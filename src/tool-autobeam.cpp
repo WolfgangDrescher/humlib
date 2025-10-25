@@ -31,6 +31,7 @@ namespace hum {
 //
 
 Tool_autobeam::Tool_autobeam(void) {
+	define("d|duration=s:4",       "grouping rhythm");
 	define("k|kern=i:0",           "process specific kern spine number");
 	define("t|track|tracks=s:0",   "process specific track number(s)");
 	define("r|remove=b",           "remove all beams");
@@ -859,6 +860,11 @@ void Tool_autobeam::initialize(HumdrumFile& infile) {
 		fill(m_tracks.begin(), m_tracks.end(), true);
 	}
 
+	if (getBoolean("duration")) {
+		m_duration = Convert::recipToDuration(getString("duration"));
+cerr << "MDURATION = " << m_duration << endl;
+	}
+
 	m_includerests = getBoolean("include-rests");
 }
 
@@ -918,6 +924,18 @@ void Tool_autobeam::processMeasure(vector<HTp>& measure) {
 
 	// First, get the beat positions of all notes in the measure:
 	vector<pair<int, HumNum> >& timesig = m_timesigs[measure[0]->getTrack()];
+	// Force 4/4 time signature if no time siguature (perhaps refine the 
+	// top number of the time signature to the duration of the measure, but
+	// currently this is probably not necessary.
+	for (int i=0; i<(int)timesig.size(); i++) {
+		if (timesig[i].first == 0) {
+			timesig[i].first = 4;
+		}
+		if (timesig[i].second == 0) {
+			timesig[i].second = 4;
+		}
+	}
+
 	for (int i=0; i<(int)measure.size(); i++) {
 		int line = measure[i]->getLineIndex();
 		if ((current.first != timesig.at(line).first) ||
@@ -927,7 +945,7 @@ void Tool_autobeam::processMeasure(vector<HTp>& measure) {
 			beatdur /= current.second;
 			beatdur *= 4; // convert to quarter-notes units from whole-notes.
 			if ((current.first % 3 == 0) && (current.first != 3)) {
-				// compound meter, so shift the beat to 3x the demoniator
+				// compound meter, so shift the beat to 3x the denominator
 				beatdur *= 3;
 			} else if (current.first == 3 && (current.second < 4)) {
 				// time signatures such as 3/8 and 3/16 which should

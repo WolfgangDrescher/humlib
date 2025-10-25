@@ -49,7 +49,7 @@ class Convert {
 		                                     HumNum scale = HumNum(1,4));
 		static std::string  durationFloatToRecip (double duration,
 		                                     HumNum scale = HumNum(1,4));
-		static HumNum timeSigToDurationInQuarter(HTp token);
+		static HumNum timeSigToDurationInQuarters(HTp token);
 
 		// Tempo processing, defined in Convert-tempo.cpp
 		static int tempoNameToMm (const std::string& name, int bot = 4, int top = 4);
@@ -207,6 +207,8 @@ class Convert {
 		static char hasKernStemDirection    (const std::string& kerndata);
 		static bool isKernSecondaryTiedNote (const std::string& kerndata);
 		static std::string getKernPitchAttributes(const std::string& kerndata);
+		static HumNum kernTimeSignatureBottomToDuration (const std::string& aKernString);
+		static int kernTimeSignatureTop (const std::string& aKernString);
 
 		static int  getKernSlurStartElisionLevel  (const std::string& kerndata, int index);
 		static int  getKernSlurEndElisionLevel    (const std::string& kerndata, int index);
