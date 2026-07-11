@@ -5,7 +5,7 @@
 // Filename:      tool-autocadence.h
 // URL:           https://github.com/craigsapp/humlib/blob/master/include/tool-autocadence.h
 // Syntax:        C++11; humlib
-// vim:           ts=3 noexpandtab
+// vim:           ts=3 nowrap noexpandtab
 //
 // Description:   Automatic detection of cadences in Renaissance music.
 //
@@ -57,6 +57,11 @@ class Tool_autocadence : public HumTool {
 
 	protected:
 		void        processFile         (HumdrumFile& infile);
+		void        fillInLastMelodicInterval(HumdrumFile& infile);
+		void        getTokenList        (HTp start, std::vector<HTp>& holder);
+		void        calculateVoiceIntervals(const std::vector<HTp>& contents,
+		                                    std::vector<int>& diatonic,
+		                                    std::vector<std::string>& interval);
 		void        generateCounterpointStrings(std::vector<HTp>& kspines, int indexL, int indexU);
 		std::string generateCounterpointString(std::vector<std::vector<HTp>>& pairings, int index);
       void        printModules        (std::vector<std::string>& modules, int lowerPart, int upperPart);
@@ -64,6 +69,8 @@ class Tool_autocadence : public HumTool {
 		std::string getDiatonicIntervalString  (int lower, int upper);
 		int         getDiatonicInterval        (int lower, int upper);
 		void        prepareCadenceDefinitions  (void);
+		void        prepareCadenceLabels       (void);
+		void        addCadenceLabel            (std::string definition, std::string label);
 		void        addCadenceDefinition       (const std::string& funcL, const std::string& funcU,
 		                                        const std::string& name, const std::string& regex);
 		void        prepareLowestPitches       (void);
@@ -105,6 +112,11 @@ class Tool_autocadence : public HumTool {
 		void        prepareDissonances         (HumdrumFile& infile);
 		void        prepareDissonancesForLine  (HumdrumLine& iline, HumdrumLine& dline);
 		void        identifySuspensionsAndAgents(HumdrumFile& infile);
+		std::string sortUniqueChars            (const std::string& input);
+		void        fillInMajorMinor           (HumdrumFile& infile);
+		bool        getPhrygian                (HumdrumFile& infile, int index);
+		std::string getIntervalName            (const std::string& b40);
+		std::string getTriadData               (HumdrumFile& infile, int line);
 
 	private:
 
@@ -168,6 +180,15 @@ class Tool_autocadence : public HumTool {
 		// m_dissonanceNames: mapping from dissonance abbreviation to full name of dissonance.
 		std::map<std::string, std::string> m_dissonanceNames;
 
+		// m_cadenceLabels: mapping from part function to full name of cadence.
+		std::map<std::string, std::string> m_cadenceLabels;
+
+		// m_barnum: mapping from line to measure number (of fist spine);
+		std::vector<int> m_barnum;
+
+		// m_lastmel: The last melodic interval (diatonic)
+		std::vector<std::vector<std::string>> m_lastmel;
+
 		bool m_hasSuspensionMarkersQ = false;
 
 		// options:
@@ -180,7 +201,8 @@ class Tool_autocadence : public HumTool {
 		bool m_printSequenceInfoQ       = false; // -s: print list of interval sequences
 		bool m_countQ                   = false; // --count: print number of cadences found
 		bool m_colorQ                   = false; // -c: color matched cadence formula
-		std::string m_color      = "dodgerblue"; // --color "string" to set matched notes to a specific color
+		std::string m_triadColor        = "salmon"; // -C: color triad analysis
+		std::string m_color             = "dodgerblue"; // --color "string" to set matched notes to a specific color
 		bool m_showFormulaIndexQ        = false; // -f: show formulation index after CVF label
 		bool m_evenNoteSpacingQ         = false; // -e: compress notation (verovio option evenNoteSpacing)
 		bool m_regexQ                   = false; // -r: show table of matched regular expressions
@@ -188,9 +210,25 @@ class Tool_autocadence : public HumTool {
 		bool m_nobackQ                  = false; // -B: don't highlight start of sustain at start of cadence definition
 		bool m_showSuspensionsQ         = true;  // !-S: show suspension/agent labels in output score
 		bool m_lowestQ                  = false; // -l: use lowest note to define suspensions instead of dissonance analysis
+		bool m_repeatQ                  = false; // -r: allow repeated notes
+		bool m_infoQ                    = false; // -i print info only
+		bool m_fileQ                    = false; // -f print filename info
+		bool m_lastQ                    = false;  // -L
+		bool m_markupQ                  = false; // -M
+		bool m_rootQ                    = false; // --root
+		bool m_qualityQ                 = false; // -q
+		bool m_triadQ                   = false; // -q|--root
+
+		int         m_cadenceCount = 0;
 		std::string m_marker = "@";
 		std::string m_suspensionMarker = "N";
 		std::string m_suspensionColor  = "crimson";
+		std::stringstream m_info;
+		std::string m_lastMelColor     = "limegreen";
+		std::vector<std::string> m_quality;
+		std::vector<std::string> m_root;
+		bool m_foundEmpytTriad = false;
+		bool m_hasTriadColor = false;
 };
 
 // END_MERGE

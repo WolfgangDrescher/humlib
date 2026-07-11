@@ -406,7 +406,8 @@ HTp HumdrumToken::getExclusiveInterpretation(void) {
 
 bool HumdrumToken::isDataType(const string& dtype) const {
 	if (dtype.compare(0, 2, "**") == 0) {
-		return dtype == getDataType();
+		bool value = dtype == getDataType();
+		return value;
 	} else {
 		return getDataType().compare(2, string::npos, dtype) == 0;
 	}
@@ -2637,31 +2638,43 @@ int HumdrumToken::getSubtokenCount(const string& separator) const {
 //
 
 string HumdrumToken::getSubtoken(int index, const string& separator) const {
-	if (index < 0) {
-		return "";
-	}
+    if (index < 0) return "";
 
-	string output;
-	const string& token = *this;
-	if (separator.size() == 0) {
-		output = token[index];
-		return output;
-	}
+    const string& s = *this;
 
-	int count = 0;
-	for (int i=0; i<(int)size(); i++) {
-		if (this->compare(i, separator.size(), separator) == 0) {
-			count++;
-			if (count > index) {
-				break;
-			}
-			i += (int)separator.size() - 1;
-		} else if (count == index) {
-			output += token[i];
-		}
-	}
-	return output;
+    // If "separator" is empty, treat "index" as a character index.
+    if (separator.empty()) {
+        if (index >= 0 && static_cast<size_t>(index) < s.size()) {
+            return string(1, s[static_cast<size_t>(index)]);
+        } else {
+            return "";
+        }
+    }
+
+    size_t pos = 0;
+    int current = 0;
+
+    while (true) {
+        size_t next = s.find(separator, pos);
+
+        if (current == index) {
+            // We are at the target field: return up to the next separator (or end)
+            if (next == string::npos) {
+                return s.substr(pos);
+            } else {
+                return s.substr(pos, next - pos);
+            }
+        }
+
+        // Not at the target yet: advance to the next field
+        if (next == string::npos) {
+            return "";  // ran out of fields
+        }
+        pos = next + separator.size();
+        ++current;
+    }
 }
+
 
 
 
@@ -2672,12 +2685,26 @@ string HumdrumToken::getSubtoken(int index, const string& separator) const {
 //     default value: separator = " "
 //
 
-std::vector<std::string> HumdrumToken::getSubtokens (const std::string& separator) const {
-	std::vector<std::string> output;
-	const string& token = *this;
-	HumRegex hre;
-	hre.split(output, token, separator);
-	return output;
+std::vector<std::string> HumdrumToken::getSubtokens(const std::string& separator) const {
+    std::vector<std::string> out;
+    const std::string& s = *this;
+
+    if (separator.empty()) {
+        if (!s.empty()) out.push_back(s);
+        return out;
+    }
+
+    std::string::size_type start = 0;
+    while (true) {
+        auto pos = s.find(separator, start);
+        if (pos == std::string::npos) {
+            if (start < s.size()) out.emplace_back(s.substr(start)); // last piece
+            break;
+        }
+        if (pos > start) out.emplace_back(s.substr(start, pos - start)); // ignore empties
+        start = pos + separator.size();
+    }
+    return out;
 }
 
 
@@ -2688,24 +2715,32 @@ std::vector<std::string> HumdrumToken::getSubtokens (const std::string& separato
 //     default value: separator = " "
 //
 
+//////////////////////////////
+//
+// HumdrumToken::replaceSubtoken --
+//     default value: separator = " "
+//
+
 void HumdrumToken::replaceSubtoken(int index, const std::string& newsubtok,
-		const std::string& separator) {
-	if (index < 0) {
-		return;
-	}
+                const std::string& separator) {
+
+	if (index < 0) return;
+
 	std::vector<std::string> subtokens = getSubtokens(separator);
-	if (index >= (int)subtokens.size()) {
-		return;
-	}
+	if (index >= static_cast<int>(subtokens.size())) return;
+
+	// Replace the requested subtoken safely
 	subtokens[index] = newsubtok;
-	string output;
-	for (int i=0; i<(int)subtokens.size(); i++) {
+
+	// Reconstruct the token text
+	std::string output;
+	for (std::size_t i = 0; i < subtokens.size(); i++) {
+		if (i > 0) output += separator;
 		output += subtokens[i];
-		if (i < (int)subtokens.size() - 1) {
-			output += separator;
-		}
 	}
-	this->setText(output);
+
+	// Update the HumdrumToken text
+	setText(output);
 }
 
 
