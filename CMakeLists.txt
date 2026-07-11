@@ -99,6 +99,7 @@ set(SRCS
     src/tool-lnnr.cpp
 	src/tool-mei2hum.cpp
 	src/tool-metlev.cpp
+	src/tool-mint.cpp
 	src/tool-msearch.cpp
 	src/tool-musicxml2hum.cpp
 	src/tool-myank.cpp
@@ -162,6 +163,7 @@ set(HDRS
     include/tool-lnnr.h
 	include/tool-mei2hum.h
 	include/tool-metlev.h
+	include/tool-mint.h
 	include/tool-msearch.h
 	include/tool-musicxml2hum.h
 	include/tool-myank.h
