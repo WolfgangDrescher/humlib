@@ -50,6 +50,7 @@ class Tool_mint : public HumTool {
 		bool m_compoundQ = false; // -c option: reduce compound intervals to simple intervals
 		bool m_diatonicQ = false; // -d option: only display the diatonic interval number
 		bool m_lowestQ   = false; // -l option: use lowest note of a chord instead of the highest
+		bool m_cdataQ    = false; // -x option: label the spine **cdata-mint instead of **mint
 
 		std::string       m_kernTracks  = ""; // used with -k option
 		std::string       m_spineTracks = ""; // used with -s option

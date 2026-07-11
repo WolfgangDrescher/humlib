@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Sa. 11 Juli 2026 22:07:22 CEST
+// Last Modified: Sa. 11 Juli 2026 22:39:12 CEST
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -111491,6 +111491,7 @@ Tool_mint::Tool_mint(void) {
 	define("c|compound=b",     "reduce compound intervals to simple intervals");
 	define("d|diatonic=b",     "only display the diatonic interval number (no interval quality)");
 	define("l|lowest=b",       "use the lowest note of a chord instead of the highest note");
+	define("x|cdata=b",        "label the spine **cdata-mint instead of **mint");
 	define("k|kern-tracks=s",  "process only the specified kern spines");
 	define("s|spine-tracks|spine|spines|track|tracks=s", "process only the specified spines");
 }
@@ -111549,6 +111550,7 @@ void Tool_mint::initialize(void) {
 	m_compoundQ = getBoolean("compound");
 	m_diatonicQ = getBoolean("diatonic");
 	m_lowestQ   = getBoolean("lowest");
+	m_cdataQ    = getBoolean("cdata");
 
 	if (getBoolean("spine-tracks")) {
 		m_spineTracks = getString("spine-tracks");
@@ -111675,7 +111677,7 @@ int Tool_mint::processKernSpines(HumdrumFile& infile, int line, int start) {
 	} else if (infile[line].isInterpretation()) {
 		for (int i = 0; i < toksize; i++) {
 			if (toks[i]->compare(0, 2, "**") == 0) {
-				m_humdrum_text << "**mint";
+				m_humdrum_text << (m_cdataQ ? "**cdata-mint" : "**mint");
 			} else {
 				m_humdrum_text << toks[i];
 			}
