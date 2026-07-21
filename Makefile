@@ -500,7 +500,7 @@ strip-sudo:
 
 install: strip-sudo
 	@echo Copying cli tools to /usr/local/bin
-	@su mkdir -p /usr/local/bin # needed in MacOS 15 or later
+	@sudo mkdir -p /usr/local/bin # needed in MacOS 15 or later
 	@(cd $(BINDIR) && cp -f $(CLILIST) /usr/local/bin/)
 
 
