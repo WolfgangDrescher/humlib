@@ -157,6 +157,9 @@ void Tool_metweight::processFile(HumdrumFile& infile) {
 		infile.insertDataSpineBefore(track, results[i - 1], ".", exinterp);
 	}
 	infile.createLinesFromTokens();
+
+	// Enable usage in verovio (`!!!filter: metweight`)
+	m_humdrum_text << infile;
 }
 
 
