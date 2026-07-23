@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Sa. 11 Juli 2026 22:49:40 CEST
+// Last Modified: Fr. 24 Juli 2026 01:22:16 CEST
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -50913,8 +50913,8 @@ string MxmlEvent::getKernPitch(void) {
     			//    <accidental cautionary="yes">natural</accidental>
 				string caution = child.attribute("cautionary").value();
 				if (caution == "yes") {
-					editorialQ = 1;
-					reportEditorialAccidentalToOwner();
+					editorialQ = 0; // do not make caution editorial
+					// reportEditorialAccidentalToOwner();
 				}
 			}
 			child = child.next_sibling();
@@ -61478,7 +61478,7 @@ void Tool_autocadence::processFile(HumdrumFile& infile) {
 		fillInMajorMinor(infile);
 	}
 
-	// fill m_pitches and m_lowestPitch
+	// fill m_pitches and m_lowestPitch and m_lowestPitchIndex
 	preparePitchInfo(infile);
 	if (m_printRawDiatonicPitchesQ) {
 		printExtractedPitchInfo(infile);
@@ -62775,7 +62775,11 @@ void Tool_autocadence::printIntervalDataLineScore(HumdrumFile& infile,
 	}
 	if (!clabel.empty()) {
 		string slabel = sortUniqueChars(clabel);
-		string cadence = m_cadenceLabels[slabel];
+		string cadence = getCadenceLabel(slabel, infile, index);
+		//cerr << endl;
+		//cerr << "!! WLABEL" << slabel << endl;
+		//cerr << "!! Cadence" << cadence << endl;
+		//cerr << endl;
 		string infolabel = cadence;
 		if (cadence.empty()) {
 			cadence = "UNKNOWN";
@@ -62914,6 +62918,29 @@ void Tool_autocadence::printIntervalDataLineScore(HumdrumFile& infile,
 		m_humdrum_text << dataline.str() << endl;
 	}
 }
+
+
+//////////////////////////////
+//
+// Tool_autocadence::getCadenceLabel
+//
+// Ammdedation: If the CVF point forms an incorrect basizans, then label it AuthenticB
+//
+
+string Tool_autocadence::getCadenceLabel(const string& cvflabel, HumdrumFile &infile, int index) {
+	//cerr << "INDEX = " << index << endl;
+	string label = m_cadenceLabels[cvflabel];
+	int lowestIndex = m_lowestPitchIndex.at(index);
+	//cerr << "LOWESTINDEX = " << lowestIndex << endl;
+	HTp token = infile.token(index, lowestIndex);
+	int lastmel = token->getValueInt("auto", "lastmel");
+	if (lastmel == -5 || lastmel == 4) {
+		return "AuthenticB";
+	}
+	return label;
+
+}
+
 
 
 //////////////////////////////
@@ -63102,7 +63129,7 @@ void Tool_autocadence::preparePitchInfo(HumdrumFile& infile) {
 	prepareDiatonicPitches(infile);
 
 	// Now find the lowest sounding pitch for each data row in the file:
-	prepareLowestPitches();
+	prepareLowestPitches(infile);
 }
 
 
@@ -63114,30 +63141,42 @@ void Tool_autocadence::preparePitchInfo(HumdrumFile& infile) {
 //     with middle C being 28 (7 * 4).  Rests are 0.
 //
 
-void Tool_autocadence::prepareLowestPitches(void) {
+void Tool_autocadence::prepareLowestPitches(HumdrumFile& infile) {
 	m_lowestPitch.clear();
 	m_lowestPitch.resize(m_pitches.size());
 	std::fill(m_lowestPitch.begin(), m_lowestPitch.end(), 0);
 
-	for (int i=0; i<(int)m_pitches.size(); i++) {
-		int lowest = -1;
-		for (int j=0; j<(int)m_pitches[i].size(); j++) {
+	m_lowestPitchIndex.clear();
+	m_lowestPitchIndex.resize(m_pitches.size());
+	std::fill(m_lowestPitchIndex.begin(), m_lowestPitchIndex.end(), 0);
+
+	for (int line=0; line<(int)m_pitches.size(); line++) {
+		HTp token = infile.token(line, 0);
+		if (!token->getOwner()->hasSpines()) {
+			continue;
+		}
+		for (int j=0; j<(int)m_pitches[line].size(); j++) {
 			// Using abs since negative integers represent sustained notes:
-			int b7 = std::abs(m_pitches.at(i).at(j));
+			int b7 = std::abs(m_pitches.at(line).at(j));
 			if (b7 > 0) {
-				if (lowest == -1) {
-					lowest = b7;
-				} else if (b7 < lowest) {
-					lowest = b7;
+				// Warning: Not assuming chords
+				if (m_lowestPitch.at(line) == -1) {
+					m_lowestPitch.at(line) = b7;
+					m_lowestPitchIndex.at(line) = j;
+				} else if (b7 < m_lowestPitch.at(line)) {
+					m_lowestPitch.at(line) = b7;
+					m_lowestPitchIndex.at(line) = j;
 				}
 			}
+
 		}
-		if (lowest < 0) {
-			m_lowestPitch.at(i) = 0;
-		} else {
-			m_lowestPitch.at(i) = lowest;
-		}
+		HTp ltoken = infile.token(line, m_lowestPitchIndex.at(line));
+		ltoken->setValue("auto", "lowest", "xxx");
+		//cerr << ">>>>>>>> LINE : " << line << endl;
+		//cerr << "TOKEN: " << ltoken << endl;
+		////cerr << "!!LOWEST: " << m_lowestPitch.at(line) << "\tINDEX: " << m_lowestPitchIndex.at(line) << endl;
 	}
+
 }
 
 
@@ -95551,6 +95590,8 @@ bool Tool_filter::run(HumdrumFileSet& infiles) {
 			RUNTOOL(meter, infile, commands[i].second, status);
 		} else if (commands[i].first == "metlev") {
 			RUNTOOL(metlev, infile, commands[i].second, status);
+		} else if (commands[i].first == "metweight") {
+			RUNTOOL(metweight, infile, commands[i].second, status);
 		} else if (commands[i].first == "mint") { // humlib version of Humdrum Toolkit mint tool
 			RUNTOOL(mint, infile, commands[i].second, status);
 		} else if (commands[i].first == "mintx") { // humlib cli name
@@ -111836,6 +111877,301 @@ void Tool_metlev::fillVoiceResults(vector<vector<double> >& results,
 
 //////////////////////////////
 //
+// Tool_metweight::Tool_metweight -- Set the recognized options for the tool.
+//
+
+Tool_metweight::Tool_metweight(void) {
+	define("f|full=b",         "print full text labels (strong/half-strong/weak) instead of abbreviations");
+	define("i|integer=b",      "print integer rank labels (1/2/3) instead of abbreviations");
+	define("x|cdata=b",        "label the spine **cdata-metweight instead of **metweight");
+	define("k|kern-tracks=s",  "process only the specified kern spines");
+	define("s|spine|spines=s", "process only the specified spines");
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metweight::run -- Do the main work of the tool.
+//
+
+bool Tool_metweight::run(HumdrumFileSet& infiles) {
+	bool status = true;
+	for (int i = 0; i < infiles.getCount(); i++) {
+		status &= run(infiles[i]);
+	}
+	return status;
+}
+
+bool Tool_metweight::run(const string& indata, ostream& out) {
+	HumdrumFile infile(indata);
+	bool status = run(infile);
+	if (hasAnyText()) {
+		getAllText(out);
+	} else {
+		out << infile;
+	}
+	return status;
+}
+
+bool Tool_metweight::run(HumdrumFile& infile, ostream& out) {
+	bool status = run(infile);
+	if (hasAnyText()) {
+		getAllText(out);
+	} else {
+		out << infile;
+	}
+	return status;
+}
+
+bool Tool_metweight::run(HumdrumFile& infile) {
+	initialize();
+	processFile(infile);
+	return true;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metweight::initialize --
+//
+
+void Tool_metweight::initialize(void) {
+	m_fullQ    = getBoolean("full");
+	m_integerQ = getBoolean("integer");
+	m_cdataQ   = getBoolean("cdata");
+
+	if (getBoolean("spine")) {
+		m_spineTracks = getString("spine");
+	} else if (getBoolean("kern-tracks")) {
+		m_kernTracks = getString("kern-tracks");
+	}
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metweight::processFile -- Insert a **metweight spine after every
+//    processed **kern spine, containing the metric weight of the current
+//    note/rest attack.
+//
+
+void Tool_metweight::processFile(HumdrumFile& infile) {
+	int maxTrack = infile.getMaxTrack();
+
+	m_selectedKernSpines.resize(maxTrack + 1); // +1 since track=0 is not used
+	fill(m_selectedKernSpines.begin(), m_selectedKernSpines.end(), true);
+
+	vector<HTp> kernspines = infile.getKernSpineStartList();
+
+	// Calculate which input spines to process based on -k or -s option:
+	if (!m_kernTracks.empty()) {
+		vector<int> ktracks = Convert::extractIntegerList(m_kernTracks, maxTrack);
+		fill(m_selectedKernSpines.begin(), m_selectedKernSpines.end(), false);
+		for (int i = 0; i < (int)ktracks.size(); i++) {
+			int index = ktracks[i] - 1;
+			if ((index < 0) || (index >= (int)kernspines.size())) {
+				continue;
+			}
+			int track = kernspines.at(index)->getTrack();
+			m_selectedKernSpines.at(track) = true;
+		}
+	} else if (!m_spineTracks.empty()) {
+		fill(m_selectedKernSpines.begin(), m_selectedKernSpines.end(), false);
+		infile.makeBooleanTrackList(m_selectedKernSpines, m_spineTracks);
+	}
+
+	vector<HTp> voices;
+	for (int i = 0; i < (int)kernspines.size(); i++) {
+		if (m_selectedKernSpines.at(kernspines[i]->getTrack())) {
+			voices.push_back(kernspines[i]);
+		}
+	}
+	if (voices.empty()) {
+		return;
+	}
+
+	// Delegate time-signature/beat-position analysis (including pickup
+	// measures) to the meter tool, which annotates each **kern attack
+	// with "auto" parameters read back out below; "-r" also covers rests.
+	Tool_meter meterTool;
+	meterTool.process("-r");
+	meterTool.run(infile);
+
+	vector<vector<string>> results;
+	fillVoiceResults(results, infile, voices);
+
+	string exinterp = m_cdataQ ? "**cdata-metweight" : "**metweight";
+	infile.appendDataSpine(results.back(), ".", exinterp);
+	for (int i = (int)voices.size() - 1; i > 0; i--) {
+		int track = voices[i]->getTrack();
+		infile.insertDataSpineBefore(track, results[i - 1], ".", exinterp);
+	}
+	infile.createLinesFromTokens();
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metweight::fillVoiceResults -- Calculate the **metweight tokens for
+//    each selected **kern spine, one value per line, for
+//    appendDataSpine()/insertDataSpineBefore() to consume.
+//
+
+void Tool_metweight::fillVoiceResults(vector<vector<string>>& results, HumdrumFile& infile,
+		const vector<HTp>& voices) {
+
+	int lineCount = infile.getLineCount();
+	results.clear();
+	results.resize(voices.size());
+	for (int v = 0; v < (int)voices.size(); v++) {
+		results[v].resize(lineCount, ".");
+	}
+
+	for (int i = 0; i < lineCount; i++) {
+		if (!infile[i].isData()) {
+			continue;
+		}
+		for (int v = 0; v < (int)voices.size(); v++) {
+			results[v][i] = getWeightToken(infile, i, voices[v]->getTrack());
+		}
+	}
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metweight::getWeightToken -- Metric weight token for the track's
+//    **kern token on this line, using the position Tool_meter annotated.
+//    Null tokens return "."; non-attacks/unrecognized meters return WEIGHT_NONE.
+//
+
+string Tool_metweight::getWeightToken(HumdrumFile& infile, int line, int track) {
+	HTp token = NULL;
+	for (int j = 0; j < infile[line].getFieldCount(); j++) {
+		HTp tok = infile.token(line, j);
+		if (tok->getTrack() == track) {
+			token = tok;
+			break;
+		}
+	}
+	if (!token) {
+		return ".";
+	}
+
+	if (token->isNull()) {
+		return ".";
+	}
+
+	if (!token->getValueBool("auto", "hasData")) {
+		return formatWeightClass(WEIGHT_NONE);
+	}
+
+	int top = token->getValueInt("auto", "numerator");
+	int bot = token->getValueInt("auto", "denominator");
+	HumNum beat(token->getValue("auto", "zeroBeat"));
+
+	return formatWeightClass(getWeightClass(top, bot, beat));
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metweight::getWeightClass -- Derive the metric weight of a
+//    0-indexed beat position (Tool_meter's "zeroBeat" units) from the time
+//    signature by bisecting the measure's main beats: the downbeat is
+//    strong; if there is an even number of main beats, the one starting
+//    the second half is half-strong; every other main beat is weak.  A
+//    compound meter with exactly 2 main beats (6/8) also classifies its
+//    eighth-note subdivisions as weak, since those are themselves counted;
+//    everything else (a simple beat's "and", 9/8's/12/8's subdivisions,
+//    deeper subdivisions, syncopated offbeats) is left unclassified.
+//
+
+int Tool_metweight::getWeightClass(int top, int bot, HumNum beat) {
+	if ((top <= 0) || (bot <= 0) || (beat < 0)) {
+		return WEIGHT_NONE;
+	}
+
+	int multiple = top / 3;
+	int remainder = top % 3;
+	bool compound = (bot >= 8) && (multiple > 1) && (remainder == 0);
+
+	int mainBeatCount = compound ? multiple : top;
+	if (mainBeatCount <= 0) {
+		return WEIGHT_NONE;
+	}
+
+	int mainBeatIndex = beat.getInteger();
+	HumNum fraction = beat - HumNum(mainBeatIndex);
+
+	if (fraction == 0) {
+		if (mainBeatIndex == 0) {
+			return WEIGHT_STRONG;
+		}
+		if (((mainBeatCount % 2) == 0) && (mainBeatIndex == mainBeatCount / 2)) {
+			return WEIGHT_HALF_STRONG;
+		}
+		if (mainBeatIndex < mainBeatCount) {
+			return WEIGHT_WEAK;
+		}
+		return WEIGHT_NONE;
+	}
+
+	// Only a compound meter with exactly 2 main beats (6/8) classifies its
+	// eighth-note subdivisions as weak; 9/8, 12/8, etc. are felt/conducted
+	// at the main-beat level only, so their subdivisions stay unclassified.
+	if (compound && (mainBeatCount == 2) && ((fraction == HumNum(1, 3)) || (fraction == HumNum(2, 3)))) {
+		return WEIGHT_WEAK;
+	}
+
+	return WEIGHT_NONE;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metweight::formatWeightClass -- Convert a weight class into the
+//    token representation selected by the -f/-i options (abbreviated
+//    strong/half-strong/weak codes by default).
+//
+
+string Tool_metweight::formatWeightClass(int weightClass) {
+	if (m_integerQ) {
+		switch (weightClass) {
+			case WEIGHT_STRONG:      return "1";
+			case WEIGHT_HALF_STRONG: return "2";
+			case WEIGHT_WEAK:        return "3";
+			default:                 return ".";
+		}
+	} else if (m_fullQ) {
+		switch (weightClass) {
+			case WEIGHT_STRONG:      return "strong";
+			case WEIGHT_HALF_STRONG: return "half-strong";
+			case WEIGHT_WEAK:        return "weak";
+			default:                 return ".";
+		}
+	} else {
+		switch (weightClass) {
+			case WEIGHT_STRONG:      return "s";
+			case WEIGHT_HALF_STRONG: return "hs";
+			case WEIGHT_WEAK:        return "w";
+			default:                 return ".";
+		}
+	}
+}
+
+
+
+
+//////////////////////////////
+//
 // Tool_mint::Tool_mint -- Set the recognized options for the tool.
 //
 
@@ -116922,7 +117258,7 @@ bool Tool_musicxml2hum::convert(ostream& out, xml_document& doc) {
 
 	for (int i=0; i<(int)partdata.size(); i++) {
 		if (partdata[i].hasEditorialAccidental()) {
-			out << "!!!RDF**kern: i = editorial accidental" << endl;
+			out << "!!!RDF**kern: i = editorial accidentalZ" << endl;
 			break;
 		}
 	}
@@ -119220,6 +119556,7 @@ void Tool_musicxml2hum::setEditorialAccidental(int accidental, GridSlice* slice,
 		int partindex, int staffindex, int voiceindex) {
 
 	HTp tok = slice->at(partindex)->at(staffindex)->at(voiceindex)->getToken();
+cerr << "!!TOK  " << tok << endl;
 
 	if ((accidental < 0) && (tok->find("-") == string::npos))  {
 		cerr << "Editorial error for " << tok << ": no flat to mark" << endl;
@@ -119241,15 +119578,16 @@ void Tool_musicxml2hum::setEditorialAccidental(int accidental, GridSlice* slice,
 		auto loc = newtok.find("-");
 		if (loc < newtok.size()) {
 			if (newtok[loc+1] == 'X') {
-				// replace explicit accidental with editorial accidental
-				newtok[loc+1] = 'i';
-				tok->setText(newtok);
-				m_hasEditorial = 'i';
+				// Don't replace cautionary with editorial.
+				// // replace explicit accidental with editorial accidental
+				// newtok[loc+1] = 'i';
+				// tok->setText(newtok);
+				// m_hasEditorial = 'i';
 			} else {
-				// append i after -:
-				newtok.insert(loc+1, "i");
-				tok->setText(newtok);
-				m_hasEditorial = 'i';
+				// // append i after -:
+				// newtok.insert(loc+1, "i");
+				// tok->setText(newtok);
+				// m_hasEditorial = 'i';
 			}
 		}
 		return;
@@ -119260,14 +119598,14 @@ void Tool_musicxml2hum::setEditorialAccidental(int accidental, GridSlice* slice,
 		if (loc < newtok.size()) {
 			if (newtok[loc+1] == 'X') {
 				// replace explicit accidental with editorial accidental
-				newtok[loc+1] = 'i';
-				tok->setText(newtok);
-				m_hasEditorial = 'i';
+				//newtok[loc+1] = 'i';
+				//tok->setText(newtok);
+				//m_hasEditorial = 'i';
 			} else {
 				// append i after -:
-				newtok.insert(loc+1, "i");
-				tok->setText(newtok);
-				m_hasEditorial = 'i';
+				//newtok.insert(loc+1, "i");
+				//tok->setText(newtok);
+				//m_hasEditorial = 'i';
 			}
 		}
 		return;
@@ -119278,24 +119616,24 @@ void Tool_musicxml2hum::setEditorialAccidental(int accidental, GridSlice* slice,
 		if (loc < newtok.size()) {
 			if (newtok[loc+1] == 'X') {
 				// replace explicit accidental with editorial accidental
-				newtok[loc+1] = 'i';
-				tok->setText(newtok);
-				m_hasEditorial = 'i';
+				//newtok[loc+1] = 'i';
+				//tok->setText(newtok);
+				//m_hasEditorial = 'i';
 			} else {
 				// append i after -:
-				newtok.insert(loc+1, "i");
-				tok->setText(newtok);
-				m_hasEditorial = 'i';
+				//newtok.insert(loc+1, "i");
+				//tok->setText(newtok);
+				//m_hasEditorial = 'i';
 			}
 		} else {
 			// no natural sign, so add it after any pitch classes.
-			HumRegex hre;
-			hre.search(newtok, R"(([a-gA-G]+))");
-			string diatonic = hre.getMatch(1);
-			string newacc = diatonic + "i";
-			hre.replaceDestructive(newtok, newacc, diatonic);
-			tok->setText(newtok);
-			m_hasEditorial = 'i';
+			//HumRegex hre;
+			//hre.search(newtok, R"(([a-gA-G]+))");
+			//string diatonic = hre.getMatch(1);
+			//string newacc = diatonic + "i";
+			//hre.replaceDestructive(newtok, newacc, diatonic);
+			//tok->setText(newtok);
+			//m_hasEditorial = 'i';
 		}
 		return;
 	}
@@ -119873,7 +120211,7 @@ string Tool_musicxml2hum::getFiguredBassString(xml_node fnode) {
 	if (pattr) {
 		string pval = pattr.value();
 		if (pval == "yes") {
-			editorial = "i";
+			editorial = "iZ";
 		}
 	}
 	// There is no bracket for FB in musicxml (3.0).
