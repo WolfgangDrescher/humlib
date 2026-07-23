@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Mon Jul 20 10:35:12 CEST 2026
+// Last Modified: Fr. 24 Juli 2026 08:32:33 CEST
 // Filename:      min/humlib.h
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.h
 // Syntax:        C++11
@@ -9727,6 +9727,47 @@ class Tool_metlev : public HumTool {
 
 };
 
+
+
+class Tool_metweight : public HumTool {
+
+	public:
+		     Tool_metweight  (void);
+		     ~Tool_metweight () {};
+
+		bool run     (HumdrumFileSet& infiles);
+		bool run     (HumdrumFile& infile);
+		bool run     (const std::string& indata, std::ostream& out);
+		bool run     (HumdrumFile& infile, std::ostream& out);
+
+	protected:
+		void        initialize       (void);
+		void        processFile      (HumdrumFile& infile);
+		void        fillVoiceResults (std::vector<std::vector<std::string>>& results,
+		                             HumdrumFile& infile,
+		                             const std::vector<HTp>& voices);
+		std::string getWeightToken   (HumdrumFile& infile, int line, int track);
+		std::string formatWeightClass(int weightClass);
+		int         getWeightClass   (int top, int bot, HumNum beat);
+
+		// Metric weight classes (in order from strongest to weakest):
+		enum {
+			WEIGHT_STRONG      = 0,
+			WEIGHT_HALF_STRONG = 1,
+			WEIGHT_WEAK        = 2,
+			WEIGHT_NONE        = -1
+		};
+
+	private:
+		bool m_fullQ    = false; // -f option: print full text labels instead of abbreviations
+		bool m_integerQ = false; // -i option: print integer rank labels instead of abbreviations
+		bool m_cdataQ   = false; // -x option: label the spine **cdata-metweight instead of **metweight
+
+		std::string       m_kernTracks  = ""; // used with -k option
+		std::string       m_spineTracks = ""; // used with -s option
+		std::vector<bool> m_selectedKernSpines; // used with -k and -s option
+
+};
 
 
 class Tool_mint : public HumTool {
