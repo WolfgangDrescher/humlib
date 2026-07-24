@@ -298,21 +298,21 @@ string Tool_metweight::formatWeightClass(int weightClass) {
 			case WEIGHT_STRONG:      return "1";
 			case WEIGHT_HALF_STRONG: return "2";
 			case WEIGHT_WEAK:        return "3";
-			default:                 return ".";
+			default:                 return "4";
 		}
 	} else if (m_fullQ) {
 		switch (weightClass) {
 			case WEIGHT_STRONG:      return "strong";
 			case WEIGHT_HALF_STRONG: return "half-strong";
 			case WEIGHT_WEAK:        return "weak";
-			default:                 return ".";
+			default:                 return "none";
 		}
 	} else {
 		switch (weightClass) {
 			case WEIGHT_STRONG:      return "s";
 			case WEIGHT_HALF_STRONG: return "hs";
 			case WEIGHT_WEAK:        return "w";
-			default:                 return ".";
+			default:                 return "n";
 		}
 	}
 }
