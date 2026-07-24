@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Fr. 24 Juli 2026 10:23:42 CEST
+// Last Modified: Fr. 24 Juli 2026 10:24:07 CEST
 // Filename:      min/humlib.h
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.h
 // Syntax:        C++11
@@ -9848,14 +9848,13 @@ class Tool_mint : public HumTool {
 		bool run     (HumdrumFile& infile, std::ostream& out);
 
 	protected:
-		void        initialize             (void);
-		void        processFile            (HumdrumFile& infile);
-		void        analyzeLine            (HumdrumFile& infile, int line);
-		int         processKernSpines      (HumdrumFile& infile, int line, int start);
-		std::string getIntervalToken       (HTp token);
-		std::string getIntervalQuality     (int base40interval);
-		HTp         getPreviousAttackToken (HTp token);
-		int         getRepresentativeBase40Pitch(HTp token);
+		void                     initialize             (void);
+		void                     processFile            (HumdrumFile& infile);
+		std::vector<std::string> getTrackData           (HTp kernstart, int lineCount);
+		std::string              getIntervalToken       (HTp token);
+		std::string              getIntervalQuality     (int base40interval);
+		HTp                      getPreviousAttackToken (HTp token);
+		int                      getRepresentativeBase40Pitch(HTp token);
 
 	private:
 		bool m_absoluteQ = false; // -a option: hide direction of the interval
@@ -9864,8 +9863,8 @@ class Tool_mint : public HumTool {
 		bool m_lowestQ   = false; // -l option: use lowest note of a chord instead of the highest
 		bool m_cdataQ    = false; // -x option: label the spine **cdata-mint instead of **mint
 
-		std::string       m_kernTracks  = ""; // used with -k option
-		std::string       m_spineTracks = ""; // used with -s option
+		std::string       m_kernTracks    = ""; // used with -k option
+		std::string       m_spines        = ""; // used with -s option
 		std::vector<bool> m_selectedKernSpines; // used with -k and -s option
 
 };

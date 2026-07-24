@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Fr. 24 Juli 2026 10:23:42 CEST
+// Last Modified: Fr. 24 Juli 2026 10:24:07 CEST
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -112226,7 +112226,7 @@ Tool_mint::Tool_mint(void) {
 	define("l|lowest=b",       "use the lowest note of a chord instead of the highest note");
 	define("x|cdata=b",        "label the spine **cdata-mint instead of **mint");
 	define("k|kern-tracks=s",  "process only the specified kern spines");
-	define("s|spine-tracks|spine|spines|track|tracks=s", "process only the specified spines");
+	define("s|spine|spines=s", "process only the specified spines");
 }
 
 
@@ -112285,8 +112285,8 @@ void Tool_mint::initialize(void) {
 	m_lowestQ   = getBoolean("lowest");
 	m_cdataQ    = getBoolean("cdata");
 
-	if (getBoolean("spine-tracks")) {
-		m_spineTracks = getString("spine-tracks");
+	if (getBoolean("spines")) {
+		m_spines = getString("spines");
 	} else if (getBoolean("kern-tracks")) {
 		m_kernTracks = getString("kern-tracks");
 	}
@@ -112307,9 +112307,10 @@ void Tool_mint::processFile(HumdrumFile& infile) {
 	m_selectedKernSpines.resize(maxTrack + 1); // +1 since track=0 is not used
 	fill(m_selectedKernSpines.begin(), m_selectedKernSpines.end(), true);
 
+	vector<HTp> kernspines = infile.getKernSpineStartList();
+
 	// Calculate which input spines to process based on -k or -s option:
 	if (!m_kernTracks.empty()) {
-		vector<HTp> kernspines = infile.getKernSpineStartList();
 		vector<int> ktracks = Convert::extractIntegerList(m_kernTracks, maxTrack);
 		fill(m_selectedKernSpines.begin(), m_selectedKernSpines.end(), false);
 		for (int i = 0; i < (int)ktracks.size(); i++) {
@@ -112320,114 +112321,51 @@ void Tool_mint::processFile(HumdrumFile& infile) {
 			int track = kernspines.at(index)->getTrack();
 			m_selectedKernSpines.at(track) = true;
 		}
-	} else if (!m_spineTracks.empty()) {
+	} else if (!m_spines.empty()) {
 		fill(m_selectedKernSpines.begin(), m_selectedKernSpines.end(), false);
-		infile.makeBooleanTrackList(m_selectedKernSpines, m_spineTracks);
+		infile.makeBooleanTrackList(m_selectedKernSpines, m_spines);
 	}
 
-	for (int i = 0; i < infile.getLineCount(); i++) {
-		analyzeLine(infile, i);
+	string exinterp = m_cdataQ ? "**cdata-mint" : "**mint";
+	int lineCount = infile.getLineCount();
+
+	// Insert each voice's spine right after its own track, processing from
+	// last to first so that earlier (not-yet-processed) voices' track
+	// numbers are not shifted by a later insertion.
+	for (int i = (int)kernspines.size() - 1; i >= 0; i--) {
+		int track = kernspines[i]->getTrack();
+		if (!m_selectedKernSpines.at(track)) {
+			continue;
+		}
+		vector<string> trackData = getTrackData(kernspines[i], lineCount);
+		infile.insertDataSpineAfter(track, trackData, ".", exinterp);
 	}
+	infile.createLinesFromTokens();
+
+	// Enables usage in verovio (`!!!filter: mint`)
+	m_humdrum_text << infile;
 }
 
 
 
 //////////////////////////////
 //
-// Tool_mint::analyzeLine -- Append a **mint spine after every processed
-//    **kern spine on the current line.
+// Tool_mint::getTrackData -- Calculate the **mint spine data for a single
+//    **kern spine, one entry per line of the file (empty for non-data
+//    lines, which are filled in automatically by appendDataSpine/
+//    insertDataSpineBefore).
 //
 
-void Tool_mint::analyzeLine(HumdrumFile& infile, int line) {
-	if (!infile[line].hasSpines()) {
-		m_humdrum_text << infile[line] << "\n";
-		return;
+vector<string> Tool_mint::getTrackData(HTp kernstart, int lineCount) {
+	vector<string> trackData(lineCount);
+	HTp current = kernstart;
+	while (current) {
+		if (current->isData()) {
+			trackData[current->getLineIndex()] = getIntervalToken(current);
+		}
+		current = current->getNextToken();
 	}
-	for (int i = 0; i < infile[line].getFieldCount(); i++) {
-		HTp token = infile.token(line, i);
-		if (!token->isKern() || !m_selectedKernSpines.at(token->getTrack())) {
-			m_humdrum_text << token;
-			if (i < infile[line].getFieldCount() - 1) {
-				m_humdrum_text << '\t';
-			}
-			continue;
-		}
-		i = processKernSpines(infile, line, i);
-		if (i < infile[line].getFieldCount() - 1) {
-			m_humdrum_text << '\t';
-		}
-	}
-	m_humdrum_text << '\n';
-}
-
-
-
-//////////////////////////////
-//
-// Tool_mint::processKernSpines -- Print the tokens of a **kern spine
-//    (including any of its subspines) followed by the matching **mint
-//    analysis tokens.  Returns the field index of the last token that
-//    was processed on the line.
-//
-
-int Tool_mint::processKernSpines(HumdrumFile& infile, int line, int start) {
-	HTp token = infile.token(line, start);
-	int track = token->getTrack();
-	vector<HTp> toks;
-	toks.push_back(token);
-	for (int i = start + 1; i < infile[line].getFieldCount(); i++) {
-		HTp newtok = infile.token(line, i);
-		if (newtok->getTrack() == track) {
-			toks.push_back(newtok);
-			continue;
-		}
-		break;
-	}
-
-	int toksize = (int)toks.size();
-
-	// print the **kern fields
-	for (int i = 0; i < toksize; i++) {
-		m_humdrum_text << toks[i];
-		m_humdrum_text << '\t';
-	}
-
-	// print the parallel **mint analysis fields
-	if (infile[line].isData()) {
-		for (int i = 0; i < toksize; i++) {
-			m_humdrum_text << getIntervalToken(toks[i]);
-			if (i < toksize - 1) {
-				m_humdrum_text << '\t';
-			}
-		}
-	} else if (infile[line].isLocalComment()) {
-		for (int i = 0; i < toksize; i++) {
-			m_humdrum_text << "!";
-			if (i < toksize - 1) {
-				m_humdrum_text << '\t';
-			}
-		}
-	} else if (infile[line].isInterpretation()) {
-		for (int i = 0; i < toksize; i++) {
-			if (toks[i]->compare(0, 2, "**") == 0) {
-				m_humdrum_text << (m_cdataQ ? "**cdata-mint" : "**mint");
-			} else {
-				m_humdrum_text << toks[i];
-			}
-			if (i < toksize - 1) {
-				m_humdrum_text << '\t';
-			}
-		}
-	} else if (infile[line].isBarline()) {
-		for (int i = 0; i < toksize; i++) {
-			m_humdrum_text << toks[0];
-			if (i < toksize - 1) {
-				m_humdrum_text << '\t';
-			}
-		}
-	}
-
-	return start + toksize - 1;
+	return trackData;
 }
 
 
