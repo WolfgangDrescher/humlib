@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Fr. 24 Juli 2026 09:36:39 CEST
+// Last Modified: Fr. 24 Juli 2026 10:20:37 CEST
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -111528,8 +111528,8 @@ void Tool_metlev::fillVoiceResults(vector<vector<double> >& results,
 //
 
 Tool_metweight::Tool_metweight(void) {
-	define("f|full=b",         "print full text labels (strong/half-strong/weak) instead of abbreviations");
-	define("i|integer=b",      "print integer rank labels (1/2/3) instead of abbreviations");
+	define("f|full=b",         "print full text labels (strong/half-strong/weak/unclassified) instead of abbreviations");
+	define("i|integer=b",      "print integer rank labels (1/2/3/4) instead of abbreviations");
 	define("x|cdata=b",        "label the spine **cdata-metweight instead of **metweight");
 	define("k|kern-tracks=s",  "process only the specified kern spines");
 	define("s|spine|spines=s", "process only the specified spines");

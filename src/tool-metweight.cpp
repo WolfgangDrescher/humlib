@@ -28,8 +28,8 @@ namespace hum {
 //
 
 Tool_metweight::Tool_metweight(void) {
-	define("f|full=b",         "print full text labels (strong/half-strong/weak) instead of abbreviations");
-	define("i|integer=b",      "print integer rank labels (1/2/3) instead of abbreviations");
+	define("f|full=b",         "print full text labels (strong/half-strong/weak/unclassified) instead of abbreviations");
+	define("i|integer=b",      "print integer rank labels (1/2/3/4) instead of abbreviations");
 	define("x|cdata=b",        "label the spine **cdata-metweight instead of **metweight");
 	define("k|kern-tracks=s",  "process only the specified kern spines");
 	define("s|spine|spines=s", "process only the specified spines");
