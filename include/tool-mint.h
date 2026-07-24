@@ -36,14 +36,13 @@ class Tool_mint : public HumTool {
 		bool run     (HumdrumFile& infile, std::ostream& out);
 
 	protected:
-		void        initialize             (void);
-		void        processFile            (HumdrumFile& infile);
-		void        analyzeLine            (HumdrumFile& infile, int line);
-		int         processKernSpines      (HumdrumFile& infile, int line, int start);
-		std::string getIntervalToken       (HTp token);
-		std::string getIntervalQuality     (int base40interval);
-		HTp         getPreviousAttackToken (HTp token);
-		int         getRepresentativeBase40Pitch(HTp token);
+		void                     initialize             (void);
+		void                     processFile            (HumdrumFile& infile);
+		std::vector<std::string> getTrackData           (HTp kernstart, int lineCount);
+		std::string              getIntervalToken       (HTp token);
+		std::string              getIntervalQuality     (int base40interval);
+		HTp                      getPreviousAttackToken (HTp token);
+		int                      getRepresentativeBase40Pitch(HTp token);
 
 	private:
 		bool m_absoluteQ = false; // -a option: hide direction of the interval

@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Fr. 24 Juli 2026 09:49:05 CEST
+// Last Modified: Fr. 24 Juli 2026 09:50:23 CEST
 // Filename:      min/humlib.h
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.h
 // Syntax:        C++11
@@ -9736,14 +9736,13 @@ class Tool_mint : public HumTool {
 		bool run     (HumdrumFile& infile, std::ostream& out);
 
 	protected:
-		void        initialize             (void);
-		void        processFile            (HumdrumFile& infile);
-		void        analyzeLine            (HumdrumFile& infile, int line);
-		int         processKernSpines      (HumdrumFile& infile, int line, int start);
-		std::string getIntervalToken       (HTp token);
-		std::string getIntervalQuality     (int base40interval);
-		HTp         getPreviousAttackToken (HTp token);
-		int         getRepresentativeBase40Pitch(HTp token);
+		void                     initialize             (void);
+		void                     processFile            (HumdrumFile& infile);
+		std::vector<std::string> getTrackData           (HTp kernstart, int lineCount);
+		std::string              getIntervalToken       (HTp token);
+		std::string              getIntervalQuality     (int base40interval);
+		HTp                      getPreviousAttackToken (HTp token);
+		int                      getRepresentativeBase40Pitch(HTp token);
 
 	private:
 		bool m_absoluteQ = false; // -a option: hide direction of the interval
