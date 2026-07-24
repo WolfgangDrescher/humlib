@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Fr. 24 Juli 2026 08:33:05 CEST
+// Last Modified: Fr. 24 Juli 2026 08:36:40 CEST
 // Filename:      min/humlib.h
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.h
 // Syntax:        C++11
@@ -9762,6 +9762,7 @@ class Tool_metweight : public HumTool {
 		bool m_fullQ    = false; // -f option: print full text labels instead of abbreviations
 		bool m_integerQ = false; // -i option: print integer rank labels instead of abbreviations
 		bool m_cdataQ   = false; // -x option: label the spine **cdata-metweight instead of **metweight
+		bool m_nullQ    = false; // -n option: always use the null token . for unclassified positions
 
 		std::string       m_kernTracks  = ""; // used with -k option
 		std::string       m_spineTracks = ""; // used with -s option

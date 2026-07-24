@@ -33,6 +33,7 @@ Tool_metweight::Tool_metweight(void) {
 	define("x|cdata=b",        "label the spine **cdata-metweight instead of **metweight");
 	define("k|kern-tracks=s",  "process only the specified kern spines");
 	define("s|spine|spines=s", "process only the specified spines");
+	define("n|null=b",         "always use the null token . for unclassified positions");
 }
 
 
@@ -88,6 +89,7 @@ void Tool_metweight::initialize(void) {
 	m_fullQ    = getBoolean("full");
 	m_integerQ = getBoolean("integer");
 	m_cdataQ   = getBoolean("cdata");
+	m_nullQ    = getBoolean("null");
 
 	if (getBoolean("spine")) {
 		m_spineTracks = getString("spine");
@@ -289,10 +291,14 @@ int Tool_metweight::getWeightClass(int top, int bot, HumNum beat) {
 //
 // Tool_metweight::formatWeightClass -- Convert a weight class into the
 //    token representation selected by the -f/-i options (abbreviated
-//    strong/half-strong/weak codes by default).
+//    strong/half-strong/weak codes by default); -n forces the null
+//    token "." for unclassified positions in all three modes.
 //
 
 string Tool_metweight::formatWeightClass(int weightClass) {
+	if (m_nullQ && (weightClass == WEIGHT_NONE)) {
+		return ".";
+	}
 	if (m_integerQ) {
 		switch (weightClass) {
 			case WEIGHT_STRONG:      return "1";
