@@ -49,10 +49,10 @@ class Tool_metweight : public HumTool {
 
 		// Metric weight classes (in order from strongest to weakest):
 		enum {
-			WEIGHT_STRONG      = 0,
-			WEIGHT_HALF_STRONG = 1,
-			WEIGHT_WEAK        = 2,
-			WEIGHT_NONE        = -1
+			WEIGHT_STRONG       = 0,
+			WEIGHT_HALF_STRONG  = 1,
+			WEIGHT_WEAK         = 2,
+			WEIGHT_UNCLASSIFIED = -1
 		};
 
 	private:

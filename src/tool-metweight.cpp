@@ -199,7 +199,8 @@ void Tool_metweight::fillVoiceResults(vector<vector<string>>& results, HumdrumFi
 //
 // Tool_metweight::getWeightToken -- Metric weight token for the track's
 //    **kern token on this line, using the position Tool_meter annotated.
-//    Null tokens return "."; non-attacks/unrecognized meters return WEIGHT_NONE.
+//    Null tokens return "."; non-attacks/unrecognized meters return
+//    WEIGHT_UNCLASSIFIED.
 //
 
 string Tool_metweight::getWeightToken(HumdrumFile& infile, int line, int track) {
@@ -220,7 +221,7 @@ string Tool_metweight::getWeightToken(HumdrumFile& infile, int line, int track) 
 	}
 
 	if (!token->getValueBool("auto", "hasData")) {
-		return formatWeightClass(WEIGHT_NONE);
+		return formatWeightClass(WEIGHT_UNCLASSIFIED);
 	}
 
 	int top = token->getValueInt("auto", "numerator");
@@ -256,7 +257,7 @@ int Tool_metweight::getWeightClass(int top, int bot, HumNum beat) {
 	// a negative position (should not normally happen, but would break
 	// the arithmetic below if it did).
 	if ((top <= 0) || (bot <= 0) || (beat < 0)) {
-		return WEIGHT_NONE;
+		return WEIGHT_UNCLASSIFIED;
 	}
 
 	// How many main beats does this measure have, and is the meter
@@ -274,7 +275,7 @@ int Tool_metweight::getWeightClass(int top, int bot, HumNum beat) {
 	if (mainBeatCount <= 0) {
 		// Defensive: cannot happen for a valid time signature (top > 0),
 		// but avoids a divide-by-zero-flavored mainBeatCount/2 below.
-		return WEIGHT_NONE;
+		return WEIGHT_UNCLASSIFIED;
 	}
 
 	// Split "beat" (e.g. 4/3 for the second eighth note of the second
@@ -303,7 +304,7 @@ int Tool_metweight::getWeightClass(int top, int bot, HumNum beat) {
 		// mainBeatIndex >= mainBeatCount would mean the position is at or
 		// past the end of the measure; not expected in practice, but
 		// left unclassified rather than guessing a weight for it.
-		return WEIGHT_NONE;
+		return WEIGHT_UNCLASSIFIED;
 	}
 
 	// A position between main beats (nonzero fraction, some subdivision
@@ -319,7 +320,7 @@ int Tool_metweight::getWeightClass(int top, int bot, HumNum beat) {
 	// subdivisions of 9/8 or 12/8, sixteenth notes and other deeper
 	// subdivisions, syncopated offbeats): not a notated counting position
 	// of this meter, so it is left unclassified.
-	return WEIGHT_NONE;
+	return WEIGHT_UNCLASSIFIED;
 }
 
 
@@ -333,7 +334,7 @@ int Tool_metweight::getWeightClass(int top, int bot, HumNum beat) {
 //
 
 string Tool_metweight::formatWeightClass(int weightClass) {
-	if (m_nullQ && (weightClass == WEIGHT_NONE)) {
+	if (m_nullQ && (weightClass == WEIGHT_UNCLASSIFIED)) {
 		return ".";
 	}
 	if (m_integerQ) {
@@ -348,14 +349,14 @@ string Tool_metweight::formatWeightClass(int weightClass) {
 			case WEIGHT_STRONG:      return "strong";
 			case WEIGHT_HALF_STRONG: return "half-strong";
 			case WEIGHT_WEAK:        return "weak";
-			default:                 return "none";
+			default:                 return "unclassified";
 		}
 	} else {
 		switch (weightClass) {
 			case WEIGHT_STRONG:      return "s";
 			case WEIGHT_HALF_STRONG: return "hs";
 			case WEIGHT_WEAK:        return "w";
-			default:                 return "n";
+			default:                 return "u";
 		}
 	}
 }
