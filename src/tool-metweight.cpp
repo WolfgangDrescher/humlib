@@ -152,11 +152,13 @@ void Tool_metweight::processFile(HumdrumFile& infile) {
 	vector<vector<string>> results;
 	fillVoiceResults(results, infile, voices);
 
+	// Insert each voice's spine right after its own track, processing from
+	// last to first so that earlier (not-yet-processed) voices' track
+	// numbers are not shifted by a later insertion.
 	string exinterp = m_cdataQ ? "**cdata-metweight" : "**metweight";
-	infile.appendDataSpine(results.back(), ".", exinterp);
-	for (int i = (int)voices.size() - 1; i > 0; i--) {
+	for (int i = (int)voices.size() - 1; i >= 0; i--) {
 		int track = voices[i]->getTrack();
-		infile.insertDataSpineBefore(track, results[i - 1], ".", exinterp);
+		infile.insertDataSpineAfter(track, results[i], ".", exinterp);
 	}
 	infile.createLinesFromTokens();
 
