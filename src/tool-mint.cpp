@@ -34,7 +34,7 @@ Tool_mint::Tool_mint(void) {
 	define("l|lowest=b",       "use the lowest note of a chord instead of the highest note");
 	define("x|cdata=b",        "label the spine **cdata-mint instead of **mint");
 	define("k|kern-tracks=s",  "process only the specified kern spines");
-	define("s|spine-tracks|spine|spines|track|tracks=s", "process only the specified spines");
+	define("s|spine|spines=s", "process only the specified spines");
 }
 
 
@@ -93,8 +93,8 @@ void Tool_mint::initialize(void) {
 	m_lowestQ   = getBoolean("lowest");
 	m_cdataQ    = getBoolean("cdata");
 
-	if (getBoolean("spine-tracks")) {
-		m_spineTracks = getString("spine-tracks");
+	if (getBoolean("spines")) {
+		m_spines = getString("spines");
 	} else if (getBoolean("kern-tracks")) {
 		m_kernTracks = getString("kern-tracks");
 	}
@@ -128,9 +128,9 @@ void Tool_mint::processFile(HumdrumFile& infile) {
 			int track = kernspines.at(index)->getTrack();
 			m_selectedKernSpines.at(track) = true;
 		}
-	} else if (!m_spineTracks.empty()) {
+	} else if (!m_spines.empty()) {
 		fill(m_selectedKernSpines.begin(), m_selectedKernSpines.end(), false);
-		infile.makeBooleanTrackList(m_selectedKernSpines, m_spineTracks);
+		infile.makeBooleanTrackList(m_selectedKernSpines, m_spines);
 	}
 
 	for (int i = 0; i < infile.getLineCount(); i++) {

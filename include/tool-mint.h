@@ -52,8 +52,8 @@ class Tool_mint : public HumTool {
 		bool m_lowestQ   = false; // -l option: use lowest note of a chord instead of the highest
 		bool m_cdataQ    = false; // -x option: label the spine **cdata-mint instead of **mint
 
-		std::string       m_kernTracks  = ""; // used with -k option
-		std::string       m_spineTracks = ""; // used with -s option
+		std::string       m_kernTracks    = ""; // used with -k option
+		std::string       m_spines        = ""; // used with -s option
 		std::vector<bool> m_selectedKernSpines; // used with -k and -s option
 
 };
