@@ -33,6 +33,7 @@ Tool_metweight::Tool_metweight(void) {
 	define("x|cdata=b",        "label the spine **cdata-metweight instead of **metweight");
 	define("k|kern-tracks=s",  "process only the specified kern spines");
 	define("s|spine|spines=s", "process only the specified spines");
+	define("n|null=b",         "always use the null token . for unclassified positions");
 }
 
 
@@ -88,6 +89,7 @@ void Tool_metweight::initialize(void) {
 	m_fullQ    = getBoolean("full");
 	m_integerQ = getBoolean("integer");
 	m_cdataQ   = getBoolean("cdata");
+	m_nullQ    = getBoolean("null");
 
 	if (getBoolean("spine")) {
 		m_spineTracks = getString("spine");
@@ -197,7 +199,8 @@ void Tool_metweight::fillVoiceResults(vector<vector<string>>& results, HumdrumFi
 //
 // Tool_metweight::getWeightToken -- Metric weight token for the track's
 //    **kern token on this line, using the position Tool_meter annotated.
-//    Null tokens return "."; non-attacks/unrecognized meters return WEIGHT_NONE.
+//    Null tokens return "."; non-attacks/unrecognized meters return
+//    WEIGHT_UNCLASSIFIED.
 //
 
 string Tool_metweight::getWeightToken(HumdrumFile& infile, int line, int track) {
@@ -218,7 +221,7 @@ string Tool_metweight::getWeightToken(HumdrumFile& infile, int line, int track) 
 	}
 
 	if (!token->getValueBool("auto", "hasData")) {
-		return formatWeightClass(WEIGHT_NONE);
+		return formatWeightClass(WEIGHT_UNCLASSIFIED);
 	}
 
 	int top = token->getValueInt("auto", "numerator");
@@ -232,55 +235,92 @@ string Tool_metweight::getWeightToken(HumdrumFile& infile, int line, int track) 
 
 //////////////////////////////
 //
-// Tool_metweight::getWeightClass -- Derive the metric weight of a
-//    0-indexed beat position (Tool_meter's "zeroBeat" units) from the time
-//    signature by bisecting the measure's main beats: the downbeat is
-//    strong; if there is an even number of main beats, the one starting
-//    the second half is half-strong; every other main beat is weak.  A
-//    compound meter with exactly 2 main beats (6/8) also classifies its
-//    eighth-note subdivisions as weak, since those are themselves counted;
-//    everything else (a simple beat's "and", 9/8's/12/8's subdivisions,
-//    deeper subdivisions, syncopated offbeats) is left unclassified.
+// Tool_metweight::getWeightClass -- Derive the metric weight
+//    (strong/half-strong/weak/unclassified) of a beat position from the
+//    time signature.  "beat" is Tool_meter's "zeroBeat": a 0-indexed
+//    count of main beats (quarter note in 4/4, dotted quarter in 6/8)
+//    from the start of the measure; a fractional beat (e.g. 1/3) is a
+//    subdivision within a beat.
+//
+//    Algorithm: split "beat" into a whole main-beat index and a leftover
+//    fraction.  Fraction 0 is a main beat: index 0 is strong, the beat
+//    starting the second half of the measure (only if mainBeatCount is
+//    even) is half-strong, every other main beat is weak.  A nonzero
+//    fraction is only classified (weak) for a compound meter with
+//    exactly 2 main beats (6/8), at its second/third eighth note
+//    (fraction 1/3 or 2/3); everything else is left unclassified.
 //
 
 int Tool_metweight::getWeightClass(int top, int bot, HumNum beat) {
+	// Guard against an unset/unrecognized time signature (top or bot not
+	// yet known, e.g. before the first *M interpretation in the file) or
+	// a negative position (should not normally happen, but would break
+	// the arithmetic below if it did).
 	if ((top <= 0) || (bot <= 0) || (beat < 0)) {
-		return WEIGHT_NONE;
+		return WEIGHT_UNCLASSIFIED;
 	}
 
+	// How many main beats does this measure have, and is the meter
+	// compound (does each main beat itself split into three)?  "multiple"
+	// and "remainder" are just top divided/modulo 3, reused below to
+	// test "is top a multiple of 3 that is greater than 3".
 	int multiple = top / 3;
 	int remainder = top % 3;
 	bool compound = (bot >= 8) && (multiple > 1) && (remainder == 0);
 
+	// Compound: 3 eighth notes per main beat, so top/3 main beats
+	// (6/8 -> 2, 9/8 -> 3, 12/8 -> 4).  Simple: one main beat per counted
+	// unit, so top main beats (4/4 -> 4, 3/4 -> 3, 6/4 -> 6).
 	int mainBeatCount = compound ? multiple : top;
 	if (mainBeatCount <= 0) {
-		return WEIGHT_NONE;
+		// Defensive: cannot happen for a valid time signature (top > 0),
+		// but avoids a divide-by-zero-flavored mainBeatCount/2 below.
+		return WEIGHT_UNCLASSIFIED;
 	}
 
+	// Split "beat" (e.g. 4/3 for the second eighth note of the second
+	// compound beat) into its whole main-beat index (1) and the
+	// fraction of a beat left over (1/3).
 	int mainBeatIndex = beat.getInteger();
 	HumNum fraction = beat - HumNum(mainBeatIndex);
 
+	// A main-beat position (no leftover fraction):
 	if (fraction == 0) {
 		if (mainBeatIndex == 0) {
+			// The downbeat: always the strongest position of the measure.
 			return WEIGHT_STRONG;
 		}
 		if (((mainBeatCount % 2) == 0) && (mainBeatIndex == mainBeatCount / 2)) {
+			// Exactly the main beat that starts the second half of the
+			// measure (only exists when there is an even number of main
+			// beats): the secondary/half-strong accent.
 			return WEIGHT_HALF_STRONG;
 		}
 		if (mainBeatIndex < mainBeatCount) {
+			// Any other in-range main beat: weak (e.g. beats 2 and 4 of
+			// a 4/4 measure).
 			return WEIGHT_WEAK;
 		}
-		return WEIGHT_NONE;
+		// mainBeatIndex >= mainBeatCount would mean the position is at or
+		// past the end of the measure; not expected in practice, but
+		// left unclassified rather than guessing a weight for it.
+		return WEIGHT_UNCLASSIFIED;
 	}
 
-	// Only a compound meter with exactly 2 main beats (6/8) classifies its
-	// eighth-note subdivisions as weak; 9/8, 12/8, etc. are felt/conducted
-	// at the main-beat level only, so their subdivisions stay unclassified.
+	// A position between main beats (nonzero fraction, some subdivision
+	// or syncopated offset).  Only give this a weight in the one case
+	// where the subdivision is itself a genuinely counted part of the
+	// meter: a compound meter with exactly 2 main beats (6/8), at the
+	// second or third eighth note of a beat (fraction 1/3 or 2/3).
 	if (compound && (mainBeatCount == 2) && ((fraction == HumNum(1, 3)) || (fraction == HumNum(2, 3)))) {
 		return WEIGHT_WEAK;
 	}
 
-	return WEIGHT_NONE;
+	// Everything else (a simple meter's "and" of the beat, the eighth-note
+	// subdivisions of 9/8 or 12/8, sixteenth notes and other deeper
+	// subdivisions, syncopated offbeats): not a notated counting position
+	// of this meter, so it is left unclassified.
+	return WEIGHT_UNCLASSIFIED;
 }
 
 
@@ -289,30 +329,29 @@ int Tool_metweight::getWeightClass(int top, int bot, HumNum beat) {
 //
 // Tool_metweight::formatWeightClass -- Convert a weight class into the
 //    token representation selected by the -f/-i options (abbreviated
-//    strong/half-strong/weak codes by default).
+//    strong/half-strong/weak codes by default); -n forces the null
+//    token "." for unclassified positions in all three modes.
 //
 
 string Tool_metweight::formatWeightClass(int weightClass) {
+	if (m_nullQ && (weightClass == WEIGHT_UNCLASSIFIED)) {
+		return ".";
+	}
 	if (m_integerQ) {
-		switch (weightClass) {
-			case WEIGHT_STRONG:      return "1";
-			case WEIGHT_HALF_STRONG: return "2";
-			case WEIGHT_WEAK:        return "3";
-			default:                 return ".";
-		}
+		return to_string(weightClass);
 	} else if (m_fullQ) {
 		switch (weightClass) {
 			case WEIGHT_STRONG:      return "strong";
 			case WEIGHT_HALF_STRONG: return "half-strong";
 			case WEIGHT_WEAK:        return "weak";
-			default:                 return ".";
+			default:                 return "unclassified";
 		}
 	} else {
 		switch (weightClass) {
 			case WEIGHT_STRONG:      return "s";
 			case WEIGHT_HALF_STRONG: return "hs";
 			case WEIGHT_WEAK:        return "w";
-			default:                 return ".";
+			default:                 return "u";
 		}
 	}
 }
