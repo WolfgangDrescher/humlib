@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Fr. 24 Juli 2026 09:04:33 CEST
+// Last Modified: Fr. 24 Juli 2026 09:15:49 CEST
 // Filename:      min/humlib.h
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.h
 // Syntax:        C++11
@@ -9752,10 +9752,10 @@ class Tool_metweight : public HumTool {
 
 		// Metric weight classes (in order from strongest to weakest):
 		enum {
-			WEIGHT_STRONG       = 0,
-			WEIGHT_HALF_STRONG  = 1,
-			WEIGHT_WEAK         = 2,
-			WEIGHT_UNCLASSIFIED = -1
+			WEIGHT_STRONG       = 1,
+			WEIGHT_HALF_STRONG  = 2,
+			WEIGHT_WEAK         = 3,
+			WEIGHT_UNCLASSIFIED = 4
 		};
 
 	private:

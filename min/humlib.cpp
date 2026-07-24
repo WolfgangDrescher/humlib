@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Fr. 24 Juli 2026 09:04:33 CEST
+// Last Modified: Fr. 24 Juli 2026 09:15:49 CEST
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -111838,12 +111838,7 @@ string Tool_metweight::formatWeightClass(int weightClass) {
 		return ".";
 	}
 	if (m_integerQ) {
-		switch (weightClass) {
-			case WEIGHT_STRONG:      return "1";
-			case WEIGHT_HALF_STRONG: return "2";
-			case WEIGHT_WEAK:        return "3";
-			default:                 return "4";
-		}
+		return to_string(weightClass);
 	} else if (m_fullQ) {
 		switch (weightClass) {
 			case WEIGHT_STRONG:      return "strong";
