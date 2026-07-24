@@ -137,18 +137,18 @@ void Tool_mint::processFile(HumdrumFile& infile) {
 	string exinterp = m_cdataQ ? "**cdata-mint" : "**mint";
 	int lineCount = infile.getLineCount();
 
-	for (int i = 0; i < (int)kernspines.size(); i++) {
-		if (!m_selectedKernSpines.at(kernspines[i]->getTrack())) {
+	// Insert each voice's spine right after its own track, processing from
+	// last to first so that earlier (not-yet-processed) voices' track
+	// numbers are not shifted by a later insertion.
+	for (int i = (int)kernspines.size() - 1; i >= 0; i--) {
+		int track = kernspines[i]->getTrack();
+		if (!m_selectedKernSpines.at(track)) {
 			continue;
 		}
 		vector<string> trackData = getTrackData(kernspines[i], lineCount);
-		if (i + 1 < (int)kernspines.size()) {
-			int nextTrack = kernspines[i + 1]->getTrack();
-			infile.insertDataSpineBefore(nextTrack, trackData, ".", exinterp);
-		} else {
-			infile.appendDataSpine(trackData, ".", exinterp);
-		}
+		infile.insertDataSpineAfter(track, trackData, ".", exinterp);
 	}
+	infile.createLinesFromTokens();
 
 	// Enables usage in verovio (`!!!filter: mint`)
 	m_humdrum_text << infile;
