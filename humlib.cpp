@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Mon Jul 27 20:18:31 UTC 2026
+// Last Modified: Mon Jul 27 20:20:44 UTC 2026
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -111526,7 +111526,7 @@ void Tool_metlev::fillVoiceResults(vector<vector<double> >& results,
 //
 
 Tool_mint::Tool_mint(void) {
-	define("a|absolute=b",     "do not show the direction of the interval");
+	define("d|aaaaaaabsolute=b",     "do not show the direction of the interval");
 	define("c|compound=b",     "reduce compound intervals to simple intervals");
 	define("d|diatonic=b",     "only display the diatonic interval number (no interval quality)");
 	define("l|lowest=b",       "use the lowest note of a chord instead of the highest note");
