@@ -167,9 +167,14 @@ bool Tool_dissonant::run(HumdrumFile& infile) {
 	if (suppressQ) {
 		suppressDissonances(infile, grid, attacks, results);
 
-		// should update low-level durations in suppressDissonances, but
-		// being lazy and re-analyze spines.  If there was any error in
-		// the durations, there will be no output from the program probably.
+		// Merges update token text and cached durations in place.  NoteGrid
+		// and the second analysis read tokens, not line strings, so defer
+		// createLinesFromTokens until score output (and skip it entirely for
+		// -c counts).  Invalidate then recompute null-resolution links: notes
+		// turned into "." still point at themselves otherwise, and NoteGrid
+		// treats mid-note sustains as rests.
+		infile.invalidateNullTokens();
+		infile.resolveNullTokens();
 		infile.analyzeStructure();
 
 		NoteGrid grid2(infile);
@@ -198,7 +203,10 @@ bool Tool_dissonant::run(HumdrumFile& infile) {
 			printColorLegend(infile);
 
 			adjustColorization(infile);
+			// Rebuild line strings once for Humdrum emission (merged pitches
+			// / durations and newly inserted dissonance spines).
 			infile.createLinesFromTokens();
+			m_humdrum_text << infile;
 
 			return true;
 		}
@@ -229,6 +237,7 @@ bool Tool_dissonant::run(HumdrumFile& infile) {
 		infile.createLinesFromTokens();
 
 		infile.createLinesFromTokens();
+		m_humdrum_text << infile;
 		return true;
 	} else {
 		if (getBoolean("count")) {
@@ -245,9 +254,57 @@ bool Tool_dissonant::run(HumdrumFile& infile) {
 			printColorLegend(infile);
 			adjustColorization(infile);
 			infile.createLinesFromTokens();
+			m_humdrum_text << infile;
 			return true;
 		}
 	}
+}
+
+
+
+//////////////////////////////
+//
+// Tool_dissonant::getDissonanceLabels -- Run the dissonance analysis and
+//     return the labels without modifying infile or generating any output.
+//     For use by other tools that need the analysis as data.  results[v][i]
+//     is the label for voice v (in **kern spine order) on line i of infile,
+//     or an empty string if there is none.  The -s (suppress) and -V
+//     (voice-function) variants of the analysis are not applied.
+//
+
+void Tool_dissonant::getDissonanceLabels(HumdrumFile& infile,
+		vector<vector<string>>& results) {
+	if (getBoolean("voice-number")) {
+		m_voicenumQ = true;
+	}
+	if (getBoolean("self-number")) {
+		m_selfnumQ = true;
+	}
+
+	if (getBoolean("undirected")) {
+		fillLabels2();
+	} else {
+		fillLabels();
+	}
+
+	NoteGrid grid(infile);
+
+	diss2Q = false;
+	diss7Q = false;
+	diss4Q = false;
+
+	dissL0Q = false;
+	dissL1Q = false;
+	dissL2Q = false;
+
+	vector<vector<NoteCell*>> attacks;
+	attacks.resize(grid.getVoiceCount());
+	results.clear();
+	results.resize(grid.getVoiceCount());
+	for (int i=0; i<(int)results.size(); i++) {
+		results[i].resize(infile.getLineCount());
+	}
+	doAnalysis(results, grid, attacks, getBoolean("debug"));
 }
 
 
@@ -719,17 +776,17 @@ void Tool_dissonant::suppressSusOrnamentsInVoice(HumdrumFile& infile,
 				(intn == -1) && (intnn == -1) && (intnnn == 1) ) { // turn figure anticipation of resolution phase
 				if ((results[lineindexnn] == ".") && (!tokennn->isNull()) &&
 					(tokennn->isNoteAttack()) ) {
-					mergeWithPreviousNote(infile, lineindexnn, vindex);
+					mergeWithPreviousNote(infile, lineindexnn, fieldindex);
 				}
 				if ((results[lineindexn] == ".") && (!tokenn->isNull()) &&
 					(tokenn->isNoteAttack()) ) {
-					mergeWithPreviousNote(infile, lineindexn, vindex);
+					mergeWithPreviousNote(infile, lineindexn, fieldindex);
 				}
 			} else if ((durn == durnn) && (durn == durnnn) && (levn > levnn) &&
 				(levnn < levnnn) && (intn == -1) && (intnn == 0) &&
 				(intnnn == -1) && (results[lineindexnnn] == ".") &&
 				(!tokennnn->isNull()) && (tokennnn->isNoteAttack()) ) { // Du Fay ornament
-				mergeWithPreviousNote(infile, lineindexnnn, vindex);
+				mergeWithPreviousNote(infile, lineindexnnn, fieldindex);
 			}
 		}
 		if (((results[lineindex] == m_labels[SUS_BIN]) ||
@@ -747,7 +804,7 @@ void Tool_dissonant::suppressSusOrnamentsInVoice(HumdrumFile& infile,
 			if ((durn <= durnn) && (levn >= levnn) && (intn == -1) &&
 				(intnn == 0) && (results[lineindexn] == ".") &&
 				(!tokenn->isNull()) && (tokenn->isNoteAttack()) ) { // anticipation of resolution phase
-				mergeWithPreviousNote(infile, lineindexn, vindex);
+				mergeWithPreviousNote(infile, lineindexn, fieldindex);
 			}
 		}
 	}
@@ -789,7 +846,21 @@ void Tool_dissonant::mergeWithNextNote(HumdrumFile& infile, NoteCell* cell) {
 
 void Tool_dissonant::mergeWithPreviousNote(HumdrumFile& infile, int line, int field) {
 	HTp cnote = infile.token(line, field);  // current note (attack)
+	if (!cnote || cnote->isNull() || !cnote->isKern() || cnote->isRest()) {
+		return;
+	}
 	HTp pnote = cnote->getPreviousNNDT();   // previous note (not necessarily attack)
+
+	// NNDT links are not updated when notes are nullified during suppression,
+	// so skip any already-merged placeholders to find a real previous note.
+	while (pnote && (pnote->isNull() || !pnote->isKern())) {
+		HTp earlier = pnote->getPreviousNNDT();
+		if (!earlier || earlier == pnote) {
+			pnote = NULL;
+			break;
+		}
+		pnote = earlier;
+	}
 
 	if (pnote == NULL) {
 		// no previous note;
@@ -918,13 +989,13 @@ void Tool_dissonant::simplePreviousMerge(HTp pnote, HTp cnote) {
 	HumNum pdur = pnote->getDuration();
 	HumNum dur = cdur + pdur;
 	changeDurationOfNote(pnote, dur);
+	adjustBeamsAfterMerge(pnote, cnote);
 
 	if (cnote->find("[") == string::npos) {
 		// current note is not the start of a tie group, so
-		// replace it with a null token and return.  Ideally
-		// the low-level duration of the token should also be
-		// set to zero.
+		// replace it with a null token and return.
 		cnote->setText(".");
+		cnote->setDuration(0);
 		return;
 	}
 
@@ -944,8 +1015,8 @@ void Tool_dissonant::simplePreviousMerge(HTp pnote, HTp cnote) {
 
 	changePitchOfTieGroupFollowing(cnote, pitch);
 
-	// also should set the low-level duration of the token to 0.
 	cnote->setText(".");
+	cnote->setDuration(0);
 }
 
 
@@ -984,8 +1055,216 @@ void Tool_dissonant::simpleNextMerge(HTp cnote, HTp nnote) {
 	HumNum dur = cdur + ndur;
 	changeDurationOfNote(cnote, dur);
 	changePitch(cnote, nnote);
+	adjustBeamsAfterMerge(cnote, nnote);
 	nnote->setText(".");
+	nnote->setDuration(0);
 	return;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_dissonant::adjustBeamsAfterMerge -- When a merge produces a note of
+//   a quarter note or longer, beam start/stop markers (L/J) cannot remain on
+//   that note.  Move an L to the next remaining beamable note, and a J to the
+//   previous remaining beamable note.  If a note ends up with both L and J,
+//   remove both since it has become a one-note beam group.
+//
+
+void Tool_dissonant::adjustBeamsAfterMerge(HTp survivor, HTp removed) {
+	if ((!survivor) || (!removed)) {
+		return;
+	}
+	if (survivor->getDuration() < 1) {
+		return;
+	}
+
+	auto hasBeamChar = [](HTp note, char mark) -> bool {
+		return note && note->find(mark) != string::npos;
+	};
+	auto removeBeamChar = [](HTp note, char mark) {
+		if (!note) {
+			return;
+		}
+		string text = *note;
+		text.erase(std::remove(text.begin(), text.end(), mark), text.end());
+		note->setText(text);
+	};
+
+	bool moveL = hasBeamChar(survivor, 'L') || hasBeamChar(removed, 'L');
+	bool moveJ = hasBeamChar(survivor, 'J') || hasBeamChar(removed, 'J');
+	if (!(moveL || moveJ)) {
+		return;
+	}
+
+	// Fast path: merged pair carried both beam ends (typical two-note
+	// beam → quarter).  Drop L/J; nothing remains to re-attach.
+	if (moveL && moveJ) {
+		removeBeamChar(survivor, 'L');
+		removeBeamChar(survivor, 'J');
+		removeBeamChar(removed, 'L');
+		removeBeamChar(removed, 'J');
+		return;
+	}
+
+	auto addBeamChar = [&hasBeamChar](HTp note, char mark) {
+		if ((!note) || hasBeamChar(note, mark)) {
+			return;
+		}
+		note->setText(*note + mark);
+	};
+	auto clearIfBothBeamEnds = [&hasBeamChar, &removeBeamChar](HTp note) {
+		if (hasBeamChar(note, 'L') && hasBeamChar(note, 'J')) {
+			removeBeamChar(note, 'L');
+			removeBeamChar(note, 'J');
+		}
+	};
+	// Relocate L/J only within the same beam group.  Do not walk past
+	// unrelated long notes into a neighboring group (e.g. Tenore m.1 8d
+	// must not receive J from merging 8eL+8fJ into a quarter).
+	auto nextBeamable = [removed, survivor, &hasBeamChar](HTp start) -> HTp {
+		HTp tok = start;
+		while (tok) {
+			tok = tok->getNextNNDT();
+			if (!tok) {
+				return NULL;
+			}
+			if ((tok == removed) || tok->isNull()) {
+				continue;
+			}
+			if ((!tok->isNote()) || tok->isRest()) {
+				return NULL;
+			}
+			if (tok->getDuration() >= 1) {
+				if (tok == survivor) {
+					continue;
+				}
+				return NULL;
+			}
+			if (hasBeamChar(tok, 'J')) {
+				return tok;
+			}
+			HTp fwd = tok;
+			bool foundJ = false;
+			while (fwd) {
+				fwd = fwd->getNextNNDT();
+				if (!fwd) {
+					break;
+				}
+				if ((fwd == removed) || fwd->isNull()) {
+					continue;
+				}
+				if ((!fwd->isNote()) || fwd->isRest()) {
+					break;
+				}
+				if (fwd->getDuration() >= 1) {
+					if (fwd == survivor) {
+						continue;
+					}
+					break;
+				}
+				if (hasBeamChar(fwd, 'L')) {
+					break;
+				}
+				if (hasBeamChar(fwd, 'J')) {
+					foundJ = true;
+					break;
+				}
+			}
+			if (foundJ) {
+				return tok;
+			}
+			return NULL;
+		}
+		return NULL;
+	};
+	auto prevBeamable = [removed, survivor, &hasBeamChar](HTp start) -> HTp {
+		HTp tok = start;
+		while (tok) {
+			tok = tok->getPreviousNNDT();
+			if (!tok) {
+				return NULL;
+			}
+			if ((tok == removed) || tok->isNull()) {
+				continue;
+			}
+			if ((!tok->isNote()) || tok->isRest()) {
+				return NULL;
+			}
+			if (tok->getDuration() >= 1) {
+				if (tok == survivor) {
+					continue;
+				}
+				return NULL;
+			}
+			if (hasBeamChar(tok, 'L')) {
+				return tok;
+			}
+			HTp back = tok;
+			bool foundL = false;
+			while (back) {
+				back = back->getPreviousNNDT();
+				if (!back) {
+					break;
+				}
+				if ((back == removed) || back->isNull()) {
+					continue;
+				}
+				if ((!back->isNote()) || back->isRest()) {
+					break;
+				}
+				if (back->getDuration() >= 1) {
+					if (back == survivor) {
+						continue;
+					}
+					break;
+				}
+				if (hasBeamChar(back, 'J')) {
+					break;
+				}
+				if (hasBeamChar(back, 'L')) {
+					foundL = true;
+					break;
+				}
+			}
+			if (foundL) {
+				return tok;
+			}
+			return NULL;
+		}
+		return NULL;
+	};
+
+	removeBeamChar(survivor, 'L');
+	removeBeamChar(survivor, 'J');
+	removeBeamChar(removed, 'L');
+	removeBeamChar(removed, 'J');
+
+	HTp lTarget = NULL;
+	HTp jTarget = NULL;
+	if (moveL) {
+		lTarget = nextBeamable(survivor);
+		if (lTarget) {
+			addBeamChar(lTarget, 'L');
+			clearIfBothBeamEnds(lTarget);
+		}
+	}
+	if (moveJ) {
+		// Prefer previous of removed (end of former beam), else of survivor.
+		jTarget = prevBeamable(removed);
+		if (!jTarget) {
+			jTarget = prevBeamable(survivor);
+		}
+		if (jTarget) {
+			addBeamChar(jTarget, 'J');
+			clearIfBothBeamEnds(jTarget);
+		}
+	}
+
+	if (lTarget && jTarget && (lTarget == jTarget)) {
+		clearIfBothBeamEnds(lTarget);
+	}
 }
 
 
@@ -1045,6 +1324,7 @@ void Tool_dissonant::changeDurationOfNote(HTp note, HumNum dur) {
 		text += recip;
 		text += hre.getMatch(3);
 		note->setText(text);
+		note->setDuration(dur);
 	} else {
 		cerr << "STRANGE ERROR: no duration on note" << endl;
 		return;
@@ -1064,7 +1344,19 @@ void Tool_dissonant::mergeWithNextNote(HumdrumFile& infile, int line, int field)
 	if (!cnote) {
 		return;
 	}
+	if (cnote->isNull() || !cnote->isKern() || cnote->isRest()) {
+		return;
+	}
 	HTp nnote = cnote->getNextNNDT();   // next note
+	// NNDT links can point at notes already nullified earlier in suppression.
+	while (nnote && (nnote->isNull() || !nnote->isKern())) {
+		HTp later = nnote->getNextNNDT();
+		if (!later || later == nnote) {
+			nnote = NULL;
+			break;
+		}
+		nnote = later;
+	}
 	if (!nnote) {
 		return;
 	}
@@ -1257,13 +1549,59 @@ void Tool_dissonant::doAnalysisForVoice(vector<vector<string>>& results,
 	HumNum othMeterDen; // the denominator of the other voice's notated time signature
 	bool ternAgent = false;  // true if the ref voice would be a valid agent of a ternary susp. But if true, the diss is not necessarily a susp.
 
-	for (int i=1; i<(int)attacks.size() - 1; i++) {
+		for (int i=1; i<(int)attacks.size() - 1; i++) {
+		// Same-pitch reattacks are treated as one longer note (as if written
+		// as a single duration).  Only analyze at the first attack of a run.
+		double curMidi = attacks[i]->getAbsMidiPitch();
+		if (!Convert::isNaN(curMidi)) {
+			double prevMidi = attacks[i-1]->getAbsMidiPitch();
+			if (!Convert::isNaN(prevMidi) && (curMidi == prevMidi)) {
+				continue;
+			}
+		}
+
 		sliceindex = attacks[i]->getSliceIndex();
 		lineindex = attacks[i]->getLineIndex();
 		// lineindexn = attacks[i+1]->getLineIndex();
-		attackindexn = attacks[i]->getNextAttackIndex();
+
+		// Next attack that changes pitch (or a rest); sum durations of
+		// intervening same-pitch reattacks into the current note.
+		int nextPitchAttacki = i + 1;
+		HumNum mergedDur = attacks[i]->getDuration();
+		while (nextPitchAttacki < (int)attacks.size()) {
+			double nextMidi = attacks[nextPitchAttacki]->getAbsMidiPitch();
+			if (Convert::isNaN(curMidi) || Convert::isNaN(nextMidi) ||
+					(nextMidi != curMidi)) {
+				break;
+			}
+			mergedDur += attacks[nextPitchAttacki]->getDuration();
+			nextPitchAttacki++;
+		}
+		if (nextPitchAttacki < (int)attacks.size()) {
+			attackindexn = attacks[nextPitchAttacki]->getSliceIndex();
+		} else {
+			attackindexn = -1;
+		}
 
 		marking = '\0';
+		// Patients labeled while this note was an agent; cleared if g/G is replaced.
+		vector<int> agentPatients;
+
+		auto setRefLabel = [&](const string& label) {
+			string& cur = results[vindex][lineindex];
+			bool wasAgent = (cur == m_labels[AGENT_BIN]) || (cur == m_labels[AGENT_TERN]);
+			bool nowAgent = (label == m_labels[AGENT_BIN]) || (label == m_labels[AGENT_TERN]);
+			if (wasAgent && !nowAgent) {
+				clearPatientsOfLostAgent(results, vindex, lineindex, agentPatients);
+			}
+			cur = label;
+		};
+
+		auto setAgentAndPatient = [&](const string& agentLabel, const string& patientLabel) {
+			results[vindex][lineindex] = agentLabel;
+			results[ovoiceindex][lineindex] = patientLabel;
+			agentPatients.push_back(ovoiceindex);
+		};
 
 		// calculate harmonic intervals:
 		int lowestnote = 1000;
@@ -1297,12 +1635,15 @@ void Tool_dissonant::doAnalysisForVoice(vector<vector<string>>& results,
 
 		// check if current note is dissonant to another sounding note:
 		dissonant = false;
+		bool lowerOfDissFourth = false; // ref is lower note of a dissonant fourth
 
 		int nextj = 0;
 		int j = 0;
 
 RECONSIDER:
 
+		dissonant = false;
+		lowerOfDissFourth = false;
 		int value = 0;
 		for (j=nextj; j<(int)harmint.size(); j++) {
 			if (j == vindex) {
@@ -1354,6 +1695,11 @@ RECONSIDER:
 				ovoiceindex = j;
 				// oattackindexn = grid.cell(ovoiceindex, sliceindex)->getNextAttackIndex();
 				oattackindexn = getNextPitchAttackIndex(grid, ovoiceindex, sliceindex);
+				// value == 3: other is a fourth above ref, so ref is the lower note.
+				// Lower notes of dissonant fourths only receive agent labels (g/G).
+				if (value == 3) {
+					lowerOfDissFourth = true;
+				}
 				break;
 			}
 		}
@@ -1407,13 +1753,19 @@ RECONSIDER:
 
 		// variables for dissonant voice
 		durp = attacks[i-1]->getDuration();
-		dur  = attacks[i]->getDuration();
-		durn = attacks[i+1]->getDuration();
+		dur  = mergedDur;
+		if (nextPitchAttacki < (int)attacks.size()) {
+			durn = attacks[nextPitchAttacki]->getDuration();
+			intn = *attacks[nextPitchAttacki] - *attacks[i];
+			levn = attacks[nextPitchAttacki]->getMetricLevel();
+		} else {
+			durn = 0;
+			intn = NAN;
+			levn = attacks[i]->getMetricLevel();
+		}
 		intp = *attacks[i] - *attacks[i-1];
-		intn = *attacks[i+1] - *attacks[i];
 		levp = attacks[i-1]->getMetricLevel();
 		lev  = attacks[i]->getMetricLevel();
-		levn = attacks[i+1]->getMetricLevel();
 		if (i >= 2) {
 			intpp = *attacks[i-1] - *attacks[i-2];
 			durpp = attacks[i-2]->getDuration();
@@ -1545,67 +1897,85 @@ RECONSIDER:
 			ternAgent = true;
 		}
 
-		if (((lev >= levn) || ((lev == 2) && (dur == .5))) && (lev >= levp) &&
+		// Eighth-note potential agent approached and left by step down at the
+		// same moment as the potential patient: do not label as g/s (passing
+		// motion rather than suspension agent; e.g. Trm1688d m.27).
+		bool pairedDescendingEighthAgent =
+			(intp == -1) && (dur == 0.5) && (intn == -1) &&
+			(oattackindexn >= 0) && (attackindexn == oattackindexn);
+
+		// Do not overwrite fake-suspension labels with weaker dissonance types.
+		bool keepFakeSus =
+			(results[vindex][lineindex] == m_labels[FAKE_SUSPENSION_STEP]) ||
+			(results[vindex][lineindex] == m_labels[FAKE_SUSPENSION_LEAP]);
+
+		if (keepFakeSus) {
+			// already labeled as fake suspension against another voice
+		} else if (((!lowerOfDissFourth) || pairedDescendingEighthAgent) &&
+			((lev >= levn) || ((lev == 2) && (dur == .5))) && (lev >= levp) &&
 			(dur <= durp) && (condition2 || condition2b) && valid_acc_exit) { // weak dissonances
+			// pairedDescendingEighthAgent: lower-of-fourth eighths refused as g/s
+			// because they are passing motion — allow p/n/… instead of falling
+			// through to unexplained z (e.g. Trm1022a m.89 Bass 8C vs Tenore).
 			if (intp == -1) { // descending dissonances
 				if (intn == -1) { // downward passing tone
-					results[vindex][lineindex] = m_labels[PASSING_DOWN];
+					setRefLabel(m_labels[PASSING_DOWN]);
 				} else if (intn == 1) { // lower neighbor
-					results[vindex][lineindex] = m_labels[NEIGHBOR_DOWN];
+					setRefLabel(m_labels[NEIGHBOR_DOWN]);
 				} else if ((intn == 0) && (dur <= 2)) { // descending anticipation
-					results[vindex][lineindex] = m_labels[ANT_DOWN];
+					setRefLabel(m_labels[ANT_DOWN]);
 				} else if (intn > 1) { // lower échappée
-					results[vindex][lineindex] = m_labels[ECHAPPEE_DOWN];
+					setRefLabel(m_labels[ECHAPPEE_DOWN]);
 				} else if (intn < -1) { // descending short nota cambiata
-					results[vindex][lineindex] = m_labels[CAMBIATA_DOWN_S];
+					setRefLabel(m_labels[CAMBIATA_DOWN_S]);
 				}
 			} else if (intp == 1) { // ascending dissonances
 				if (intn == 1) { // rising passing tone
-					results[vindex][lineindex] = m_labels[PASSING_UP];
+					setRefLabel(m_labels[PASSING_UP]);
 				} else if (intn == -1) { // upper neighbor
-					results[vindex][lineindex] = m_labels[NEIGHBOR_UP];
+					setRefLabel(m_labels[NEIGHBOR_UP]);
 				} else if (intn < -1) { // upper échappée
-					results[vindex][lineindex] = m_labels[ECHAPPEE_UP];
+					setRefLabel(m_labels[ECHAPPEE_UP]);
 				} else if ((intn == 0) && (dur <= 2)) { // rising anticipation
-					results[vindex][lineindex] = m_labels[ANT_UP];
+					setRefLabel(m_labels[ANT_UP]);
 				} else if (intn > 1) { // ascending short nota cambiata
-					results[vindex][lineindex] = m_labels[CAMBIATA_UP_S];
+					setRefLabel(m_labels[CAMBIATA_UP_S]);
 				}
 			} else if (intp < -1) {
 				if (intn == 1) { // reverse lower échappée
-					results[vindex][lineindex] = m_labels[REV_ECHAPPEE_DOWN];
+					setRefLabel(m_labels[REV_ECHAPPEE_DOWN]);
 				} else if (intn == -1) { // reverse descending nota cambiata
-					results[vindex][lineindex] = m_labels[REV_CAMBIATA_DOWN];
+					setRefLabel(m_labels[REV_CAMBIATA_DOWN]);
 				}
 			} else if (intp > 1) {
 				if (intn == -1) { // reverse upper échappée
-					results[vindex][lineindex] = m_labels[REV_ECHAPPEE_UP];
+					setRefLabel(m_labels[REV_ECHAPPEE_UP]);
 				} else if (intn == 1) { // reverse ascending nota cambiata
-					results[vindex][lineindex] = m_labels[REV_CAMBIATA_UP];
+					setRefLabel(m_labels[REV_CAMBIATA_UP]);
 				}
 			}
-		} else if ((durp >= 2) && (dur == 1) && (lev < levn) && valid_acc_exit &&
+		} else if ((!lowerOfDissFourth) && (durp >= 2) && (dur == 1) && (lev < levn) && valid_acc_exit &&
 					 (condition2 || condition2b) && (lev == 1)) {
 			if (intp == -1) {
 				if (intn == -1) { // dissonant third quarter descending passing tone
-					results[vindex][lineindex] = m_labels[THIRD_Q_PASS_DOWN];
+					setRefLabel(m_labels[THIRD_Q_PASS_DOWN]);
 				} else if (intn == 1) { // dissonant third quarter lower neighbor
-					results[vindex][lineindex] = m_labels[THIRD_Q_LOWER_NEI];
+					setRefLabel(m_labels[THIRD_Q_LOWER_NEI]);
 				}
 			} else if (intp == 1) {
 				if (intn == 1) { // dissonant third quarter ascending passing tone
-					results[vindex][lineindex] = m_labels[THIRD_Q_PASS_UP];
+					setRefLabel(m_labels[THIRD_Q_PASS_UP]);
 				} else if (intn == -1) { // dissonant third quarter upper neighbor
-					results[vindex][lineindex] = m_labels[THIRD_Q_UPPER_NEI];
+					setRefLabel(m_labels[THIRD_Q_UPPER_NEI]);
 				}
 			}
-		} else if (((lev > levp) || (durp+durp+durp+durp == dur)) &&
+		} else if ((!lowerOfDissFourth) && ((lev > levp) || (durp+durp+durp+durp == dur)) &&
 				   (lev == levn) && condition2 && (intn == -1) &&
 				   (dur == (durn+durn)) && ((dur+dur) <= odur)) {
 			if (fabs(intp) > 1.0) {
-				results[vindex][lineindex] = m_labels[SUS_NO_AGENT_LEAP];
+				setRefLabel(m_labels[SUS_NO_AGENT_LEAP]);
 			} else if ((fabs(intp) == 1.0) || ((intp == 0) && (fabs(intpp) == 1.0))) {
-				results[vindex][lineindex] = m_labels[SUS_NO_AGENT_STEP];
+				setRefLabel(m_labels[SUS_NO_AGENT_STEP]);
 			}
 		}
 
@@ -1614,7 +1984,8 @@ RECONSIDER:
 		//// Code to apply binary or ternary suspension and agent labels and
 		//// also suspension ornament and chanson idiom labels
 
-		else if (valid_sus_acc && ((ointn == -1) || ((ointn == -2) && (ointnn == 1)))) {
+		else if ((!pairedDescendingEighthAgent) && (dur > .25) && valid_sus_acc &&
+				((ointn == -1) || ((ointn == -2) && (ointnn == 1)))) {
 			if ((durpp == 1) && (durp == 1) && (intpp == -1) && (intp == 1) &&
 					((results[vindex][lineindexpp] == m_labels[THIRD_Q_PASS_DOWN]) ||
 					(results[vindex][lineindexpp] == m_labels[ACC_PASSING_DOWN]) ||
@@ -1623,18 +1994,19 @@ RECONSIDER:
 				results[vindex][lineindexpp] = m_labels[CHANSON_IDIOM];
 			}
 			if (ternAgent) { // ternary agent and suspension
-				results[vindex][lineindex] = m_labels[AGENT_TERN];
-				results[ovoiceindex][lineindex] = m_labels[SUS_TERN];
+				setAgentAndPatient(m_labels[AGENT_TERN], m_labels[SUS_TERN]);
 			} else if (((odur == .5) || (odur == 1)) && // purely ornamental suspension
 						((odurn == .5) || (odurn == 1)) &&
-						(ointn == -1) && (ointnn == -1) ) {
-				results[vindex][lineindex] = m_labels[AGENT_BIN];
-				results[ovoiceindex][lineindex] = m_labels[ORNAMENTAL_SUS];
+						(ointn == -1) && (ointnn == -1) &&
+						// same-pitch reattack is prepared (e.g. minim then rearticulated
+						// quarter, or two quarters), so not purely ornamental
+						!(ointp == 0)) {
+				setAgentAndPatient(m_labels[AGENT_BIN], m_labels[ORNAMENTAL_SUS]);
 			} else { // binary agent and suspension
-				results[vindex][lineindex] = m_labels[AGENT_BIN];
-				results[ovoiceindex][lineindex] = m_labels[SUS_BIN];
+				setAgentAndPatient(m_labels[AGENT_BIN], m_labels[SUS_BIN]);
 			}
-		} else if (valid_ornam_sus_acc && ((ointn == 0) && (ointnn == -1))) {
+		} else if ((!pairedDescendingEighthAgent) && (dur > .25) && valid_ornam_sus_acc &&
+				((ointn == 0) && (ointnn == -1))) {
 			if ((durpp == 1) && (durp == 1) && (intpp == -1) && (intp == 1) &&
 					((results[vindex][lineindexpp] == m_labels[THIRD_Q_PASS_DOWN]) ||
 					(results[vindex][lineindexpp] == m_labels[ACC_PASSING_DOWN]) ||
@@ -1643,14 +2015,13 @@ RECONSIDER:
 				results[vindex][lineindexpp] = m_labels[CHANSON_IDIOM];
 			}
 			if (ternAgent) { // ternary agent and suspension
-				results[vindex][lineindex] = m_labels[AGENT_TERN];
-				results[ovoiceindex][lineindex] = m_labels[SUS_TERN];
+				setAgentAndPatient(m_labels[AGENT_TERN], m_labels[SUS_TERN]);
 			} else { // binary agent and suspension
-				results[vindex][lineindex] = m_labels[AGENT_BIN];
-				results[ovoiceindex][lineindex] = m_labels[SUS_BIN];
+				setAgentAndPatient(m_labels[AGENT_BIN], m_labels[SUS_BIN]);
 			} // repeated-note of suspension
 			results[ovoiceindex][olineindexn] = m_labels[SUSPENSION_REP];
-		} else if (valid_ornam_sus_acc && ((ointn == 1) && (ointnn == -2))) {
+		} else if ((!pairedDescendingEighthAgent) && (dur > .25) && valid_ornam_sus_acc &&
+				((ointn == 1) && (ointnn == -2))) {
 			if ((durpp == 1) && (durp == 1) && (intpp == -1) && (intp == 1) &&
 					((results[vindex][lineindexpp] == m_labels[THIRD_Q_PASS_DOWN]) ||
 					(results[vindex][lineindexpp] == m_labels[ACC_PASSING_DOWN]) ||
@@ -1659,17 +2030,15 @@ RECONSIDER:
 				results[vindex][lineindexpp] = m_labels[CHANSON_IDIOM];
 			}
 			if (ternAgent) { // ternary agent and suspension
-				results[vindex][lineindex] = m_labels[AGENT_TERN];
-				results[ovoiceindex][lineindex] = m_labels[SUS_TERN];
+				setAgentAndPatient(m_labels[AGENT_TERN], m_labels[SUS_TERN]);
 			} else { // binary agent and suspension
-				results[vindex][lineindex] = m_labels[AGENT_BIN];
-				results[ovoiceindex][lineindex] = m_labels[SUS_BIN];
+				setAgentAndPatient(m_labels[AGENT_BIN], m_labels[SUS_BIN]);
 			} // This ornament is consonant against the agent so no ornament label.
 		}
 
 /////////////////////////////
 
-		if (i < ((int)attacks.size() - 2)) { // expand the analysis window
+		if ((!lowerOfDissFourth) && (i < ((int)attacks.size() - 2))) { // expand the analysis window
 
 			double intnn = *attacks[i+2] - *attacks[i+1];
 			HumNum durnn = attacks[i+2]->getDuration();       // dur of note after next
@@ -1677,21 +2046,25 @@ RECONSIDER:
 
 			if ((dur <= durp) && (lev >= levp) && (lev >= levn) &&
 					(intp == -1) && (intn == -2) && (intnn == 1)) { // long-form descending cambiata
-				results[vindex][lineindex] = m_labels[CAMBIATA_DOWN_L];
+				setRefLabel(m_labels[CAMBIATA_DOWN_L]);
 			} else if ((dur <= durp) && (lev >= levp) && (lev >= levn) &&
 					(intp == 1) && (intn == 2) && (intnn == -1)) { // long-form ascending nota cambiata
-				results[vindex][lineindex] = m_labels[CAMBIATA_UP_L];
+				setRefLabel(m_labels[CAMBIATA_UP_L]);
 			}
 		}
 
 		// Decide whether to give an unexplained dissonance label to the ref.
 		// voice if none of the dissonant conditions above apply.
+		// Lower notes of dissonant fourths do not get unexplained labels,
+		// except when a paired descending-eighth agent was refused g/s so a
+		// later pass can still identify an accented passing tone.
 		bool refLeaptTo = fabs(intp) > 1 ? true : false;
 		bool othLeaptTo = fabs(ointp) > 1 ? true : false;
 		bool refLeaptFrom = fabs(intn) > 1 ? true : false;
 		bool othLeaptFrom = fabs(ointn) > 1 ? true : false;
 
-		if ((results[vindex][lineindex] == "") && // this voice doesn't already have a dissonance label
+		if (((!lowerOfDissFourth) || pairedDescendingEighthAgent) &&
+				(results[vindex][lineindex] == "") && // this voice doesn't already have a dissonance label
 				((olineindexc < lineindex) || // other voice does not attack at this point
 				((olineindexc == lineindex) && (dur < odur)) || // both voices attack together, but ref voice leaves dissonance first
 				(((olineindexc == lineindex) && (dur == odur)) && // both voices enter and leave dissonance simultaneously
@@ -1701,7 +2074,7 @@ RECONSIDER:
 				((fabs(intp) == 1) && (fabs(intn) == 1) && !othLeaptTo && !othLeaptFrom) || // ref voice enters and leaves by step, other voice by step or rep
 				((fabs(intp) == 1) && (intn == 0) && !othLeaptTo && (ointn == 0)) || // ref enters by step and leaves by rep, other v enters by step or rep and leaves by rep
 				(!refLeaptTo && refLeaptFrom && othLeaptFrom))))) { // ref voice enters diss by step or rep and both voices leave by leap
-			results[vindex][lineindex] = unexp_label;
+			setRefLabel(unexp_label);
 		}
 
 
@@ -1709,16 +2082,63 @@ RECONSIDER:
 		// against another note with which it might have a known dissonant function.
 		// Also go back if this voice was identified as an agent, because it may be
 		// the agent of multiple patients.
+		// Also reconsider when ref was only the lower note of a fourth and got no
+		// agent label — it may still be dissonant (2nd/7th) against another voice.
 		if ((results[vindex][lineindex] == m_labels[UNLABELED_Z4]) ||
 				(results[vindex][lineindex] == m_labels[UNLABELED_Z7]) ||
 				(results[vindex][lineindex] == m_labels[AGENT_BIN]) ||
-				(results[vindex][lineindex] == m_labels[AGENT_TERN])) {
+				(results[vindex][lineindex] == m_labels[AGENT_TERN]) ||
+				(lowerOfDissFourth && (results[vindex][lineindex] == ""))) {
 			if (nextj < (int)harmint.size()) {
 				goto RECONSIDER;
 			}
 		}
 	}
 
+}
+
+
+
+//////////////////////////////
+//
+// Tool_dissonant::clearPatientsOfLostAgent -- When an agent label (g/G) is
+//     replaced during RECONSIDER (e.g. by a passing tone), clear patient
+//     labels (s/S/o) that this agent assigned at the same line — unless
+//     another voice still has an agent label there (patient may belong to
+//     that other pair as well).
+//
+
+void Tool_dissonant::clearPatientsOfLostAgent(vector<vector<string>>& results,
+		int vindex, int lineindex, vector<int>& agentPatients) {
+	if (agentPatients.empty()) {
+		return;
+	}
+	bool otherAgent = false;
+	for (int j=0; j<(int)results.size(); j++) {
+		if (j == vindex) {
+			continue;
+		}
+		if ((results[j][lineindex] == m_labels[AGENT_BIN]) ||
+				(results[j][lineindex] == m_labels[AGENT_TERN])) {
+			otherAgent = true;
+			break;
+		}
+	}
+	if (otherAgent) {
+		agentPatients.clear();
+		return;
+	}
+	for (int pv : agentPatients) {
+		if ((pv < 0) || (pv >= (int)results.size())) {
+			continue;
+		}
+		if ((results[pv][lineindex] == m_labels[SUS_BIN]) ||
+				(results[pv][lineindex] == m_labels[SUS_TERN]) ||
+				(results[pv][lineindex] == m_labels[ORNAMENTAL_SUS])) {
+			results[pv][lineindex] = "";
+		}
+	}
+	agentPatients.clear();
 }
 
 
@@ -1736,10 +2156,14 @@ void Tool_dissonant::findFakeSuspensions(vector<vector<string>>& results, NoteGr
 
 	for (int i=1; i<(int)attacks.size()-1; i++) {
 		int lineindex = attacks[i]->getLineIndex();
+		// Also upgrade passing tones that precede a suspension: those are
+		// fake suspensions, not true passing tones (e.g. Quinto m.6 in Trm0024a).
 		if ((results[vindex][lineindex].find("Z") == string::npos) &&
 			(results[vindex][lineindex].find("z") == string::npos) &&
 			(results[vindex][lineindex].find("M") == string::npos) &&
-			(results[vindex][lineindex].find("m") == string::npos)) {
+			(results[vindex][lineindex].find("m") == string::npos) &&
+			(results[vindex][lineindex] != m_labels[PASSING_DOWN]) &&
+			(results[vindex][lineindex] != m_labels[PASSING_UP])) {
 			continue;
 		}
 		intp = fabs(*attacks[i] - *attacks[i-1]);

@@ -1493,6 +1493,19 @@ bool HumdrumFileStructure::analyzeStrands(void) {
 
 ///////////////////////////////
 //
+// HumdrumFileStructure::invalidateNullTokens -- Mark null-resolution as
+//   stale so the next resolveNullTokens() recomputes sustain links.  Call
+//   after changing tokens to/from "." (e.g. dissonant -s merges).
+//
+
+void HumdrumFileStructure::invalidateNullTokens(void) {
+	m_analyses.m_nulls_analyzed = false;
+}
+
+
+
+///////////////////////////////
+//
 // HumdrumFileStructure::resolveNullTokens --
 //
 

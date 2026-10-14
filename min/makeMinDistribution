@@ -2,8 +2,8 @@
 #
 # Programmer:    Craig Stuart Sapp <craig.stanford.edu>
 # Creation Date: Mon Aug 10 00:06:00 PDT 2015
-# Last Modified: Sat Apr 15 12:02:53 PDT 2023
-# Filename:      /bin/makehumlib
+# Last Modified: Mon Aug 17 09:28:51 PDT 2026
+# Filename:      /bin/makeMinDistribution
 # Syntax:        perl 5
 # vim:           ts=3
 #
@@ -13,25 +13,27 @@
 use strict;
 use Getopt::Long;
 
-my $TargetDirectory;
+my $TargetDirectory = "min";
+my $SourceDirectory = ".";
 
 Getopt::Long::Configure("bundling");
 GetOptions (
-   'd|directory=s' => \$TargetDirectory
+   'd|directory=s' => \$TargetDirectory,
+   's|source=s' => \$SourceDirectory
 );
 
 $TargetDirectory = "min" if !$TargetDirectory;
 
 die "Cannot find directory $TargetDirectory" if !-d $TargetDirectory;
 
-my $license = getLicense("LICENSE.txt");
+my $license = getLicense("$SourceDirectory/LICENSE.txt");
 
 my $SrcDir = "src";
 my $IncDir = "include";
 my $MinDir = "min";
 
-createIncludeFile($IncDir, $TargetDirectory, "humlib.h");
-createSourceFile($SrcDir, $TargetDirectory, "humlib.cpp");
+createIncludeFile($SourceDirectory, $TargetDirectory, "humlib.h");
+createSourceFile($SourceDirectory, $TargetDirectory, "humlib.cpp");
 
 
 # Copy XML parsing library:
@@ -59,41 +61,41 @@ sub createIncludeFile {
 
 	my $contents = "";
 	my @files = (
-		"HumHash.h",
-		"HumNum.h",
-		"HumPitch.h",
-		"HumTransposer.h",
-		"HumRegex.h",
-		"HumSignifier.h",
-		"HumSignifiers.h",
-		"HumAddress.h",
-		"HumParamSet.h",
-		"HumInstrument.h",
-		"HumdrumLine.h",
-		"HumdrumToken.h",
-		"HumdrumFileBase.h",
-		"HumdrumFileStructure.h",
-		"HumdrumFileContent.h",
-		"HumdrumFile.h",
-		"MuseRecordBasic.h",
-		"MuseRecord.h",
-		"MuseData.h",
-		"MuseDataSet.h",
-		"NoteCell.h",
-		"NoteGrid.h",
-		"Convert.h",
-		"PixelColor.h",
-		"GotScore.h"
+		"include/HumHash.h",
+		"include/HumNum.h",
+		"include/HumPitch.h",
+		"include/HumTransposer.h",
+		"include/HumRegex.h",
+		"include/HumSignifier.h",
+		"include/HumSignifiers.h",
+		"include/HumAddress.h",
+		"include/HumParamSet.h",
+		"include/HumInstrument.h",
+		"include/HumdrumLine.h",
+		"include/HumdrumToken.h",
+		"include/HumdrumFileBase.h",
+		"include/HumdrumFileStructure.h",
+		"include/HumdrumFileContent.h",
+		"include/HumdrumFile.h",
+		"include/MuseRecordBasic.h",
+		"include/MuseRecord.h",
+		"include/MuseData.h",
+		"include/MuseDataSet.h",
+		"include/NoteCell.h",
+		"include/NoteGrid.h",
+		"include/Convert.h",
+		"include/PixelColor.h",
+		"include/GotScore.h"
 	);
 
 	# musicxml2hum converter related files:
 	my @files2 = (
-		"GridMeasure.h",
-		"GridSlice.h",
-		"GridVoice.h",
-		"HumGrid.h",
-		"MxmlEvent.h",
-		"MxmlMeasure.h"
+		"include/GridMeasure.h",
+		"include/GridSlice.h",
+		"include/GridVoice.h",
+		"include/HumGrid.h",
+		"include/MxmlEvent.h",
+		"include/MxmlMeasure.h"
 	);
 
 	my $file;
@@ -105,11 +107,11 @@ sub createIncludeFile {
 		$contents .= $lines;
 	}
 
-	$contents .= getMergeContents("$sourceDir/GridCommon.h");
-	$contents .= getMergeContents("$sourceDir/MxmlPart.h");
-	$contents .= getMergeContents("$sourceDir/GridSide.h");
-	$contents .= getMergeContents("$sourceDir/GridStaff.h");
-	$contents .= getMergeContents("$sourceDir/GridPart.h");
+	$contents .= getMergeContents("$SourceDirectory/include/GridCommon.h");
+	$contents .= getMergeContents("$SourceDirectory/include/MxmlPart.h");
+	$contents .= getMergeContents("$SourceDirectory/include/GridSide.h");
+	$contents .= getMergeContents("$SourceDirectory/include/GridStaff.h");
+	$contents .= getMergeContents("$SourceDirectory/include/GridPart.h");
 
 	foreach $file (@files2) {
 		my $lines = getMergeContents("$sourceDir/$file");
@@ -119,23 +121,23 @@ sub createIncludeFile {
 		$contents .= $lines;
 	}
 
-	my $options = getMergeContents("$sourceDir/Options.h");
+	my $options = getMergeContents("$sourceDir/include/Options.h");
 	$contents .= $options;
 
 	# HumTool depends on Options class:
-	$contents .= getMergeContents("$sourceDir/HumTool.h");
+	$contents .= getMergeContents("$sourceDir/include/HumTool.h");
 
 	# HumdrumFileStream depends on Options class:
-	$contents .= getMergeContents("$sourceDir/HumdrumFileStream.h");
+	$contents .= getMergeContents("$sourceDir/include/HumdrumFileStream.h");
 
 	# HumdrumFileSet depends on Options and HumdrumFileStream classes:
-	$contents .= getMergeContents("$sourceDir/HumdrumFileSet.h");
+	$contents .= getMergeContents("$sourceDir/include/HumdrumFileSet.h");
 
-	my @tools = sort glob "$sourceDir/tool-*.h";
+	my @tools = sort glob "$sourceDir/include/tool-*.h";
 
 	foreach my $tool (@tools) {
 		$tool =~ s/^$sourceDir\///;
-		$contents .= getMergeContents("$sourceDir/$tool");
+		$contents .= getMergeContents("$sourceDir//$tool");
 	}
 
 	my $date = `date`;
@@ -168,6 +170,7 @@ $license
 #include <cstring>
 #include <cstring>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -181,6 +184,7 @@ $license
 #include <set>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
@@ -205,8 +209,12 @@ using std::regex;
 using std::set;
 using std::string;
 using std::stringstream;
+using std::istringstream;
+using std::ostringstream;
 using std::to_string;
 using std::vector;
+using std::min;
+using std::max;
 
 #ifdef USING_URI
 	#include <sys/types.h>   /* socket, connect */
@@ -298,14 +306,14 @@ namespace hum {
 
 EOT
 
-	my @files = getFiles($sourceDir);
+	my @files = getFiles("$sourceDir/$SrcDir");
 	foreach my $file (@files) {
 		next if $file =~ /^humlib.cpp$/;
-		my $lines = getMergeContents("$sourceDir/$file");
+		my $lines = getMergeContents("$sourceDir/$SrcDir/$file");
 		if ($lines =~ /^\s*$/) {
 			# print "$sourceDir/$file is not correctly formatted\n";
 		}
-		print SFILE getMergeContents("$sourceDir/$file");
+		print SFILE getMergeContents("$sourceDir/$SrcDir/$file");
 	}
 
 print SFILE "\n} // end namespace hum\n";

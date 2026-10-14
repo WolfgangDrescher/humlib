@@ -19,6 +19,7 @@
 // #include <algorithm>
 #include <map>
 #include <ostream>
+#include <regex>
 #include <set>
 #include <string>
 #include <tuple>
@@ -35,12 +36,14 @@ class Tool_autocadence : public HumTool {
 			std::string m_funcU;
 			std::string m_name;
 			std::string m_regex;
+			std::regex  m_compiled;
 			void setDefinition(const std::string& funcL, const std::string& funcU,
 					const std::string& name, const std::string& regex) {
 				m_funcL = funcL;
 				m_funcU = funcU;
 				m_name = name;
 				m_regex = regex;
+				m_compiled.assign(regex);
 				// int count = std::count(text.begin(), text.end(), target);
 			}
 	};
@@ -54,6 +57,7 @@ class Tool_autocadence : public HumTool {
 		bool        run                 (const std::string& indata, std::ostream& out);
 		bool        run                 (HumdrumFile& infile, std::ostream& out);
 		void        initialize          (void);
+		void        finally             (void);
 
 	protected:
 		void        processFile         (HumdrumFile& infile);
@@ -95,6 +99,7 @@ class Tool_autocadence : public HumTool {
 		void        searchIntervalSequences    (void);
 		void        printScore                 (HumdrumFile& infile);
 		void        printMatchCount            (void);
+		void        printCadenceTable          (void);
 		void        markupScore                (HumdrumFile& infile);
 		void        addMatchToScore            (HumdrumFile& infile, int matchIndex);
 		int         getRegexSliceCount         (const std::string& regex);
@@ -110,14 +115,28 @@ class Tool_autocadence : public HumTool {
 		bool        getCadenceEndSliceNotes    (HTp& endL, HTp& endU, int count, HumdrumFile& infile,
 		                                        int lindex, int vindex, int pindex);
 		void        prepareDissonances         (HumdrumFile& infile);
-		void        prepareDissonancesForLine  (HumdrumLine& iline, HumdrumLine& dline);
 		void        identifySuspensionsAndAgents(HumdrumFile& infile);
 		std::string sortUniqueChars            (const std::string& input);
 		void        fillInMajorMinor           (HumdrumFile& infile);
 		bool        getPhrygian                (HumdrumFile& infile, int index);
+		int         getSignedSemitoneHarmonic  (HTp lower, HTp upper);
 		std::string getIntervalName            (const std::string& b40);
 		std::string getTriadData               (HumdrumFile& infile, int line);
 		std::string getCadenceLabel            (const std::string& cvflabel, HumdrumFile& infile, int index);
+		void        prepareAuthenticBAnalyses  (HumdrumFile& infile);
+		void        prepareClosingCounts       (HumdrumFile& infile);
+		void        prepareExtremisBass        (HumdrumFile& infile);
+		bool        meetsAuthenticBCriteria    (HumdrumFile& infile, int index);
+		bool        hasIncorrectBassizans      (int index);
+		bool        hasClosingVoicesAtArrival  (int index);
+		bool        hasNoEnsuingSuspension     (HumdrumFile& infile, int index);
+		bool        hasPreviousMajorSonority   (int index);
+		bool        hasLeadingToneToRoot       (HumdrumFile& infile, int index);
+		int         arrivalRootPitchClass      (HumdrumFile& infile, int index);
+		bool        isUppercaseRootObservation (const std::string& root);
+		int         rootObservationToPitchClass(const std::string& root);
+		bool        isSuspensionLabel          (const std::string& label);
+		bool        isCadentialSuspensionPair  (HTp lower, HTp upper);
 
 	private:
 
@@ -193,6 +212,15 @@ class Tool_autocadence : public HumTool {
 		// m_lastmel: The last melodic interval (diatonic)
 		std::vector<std::vector<std::string>> m_lastmel;
 
+		// m_closingCounts: closing-voice count at each line, matching Tool_closing.
+		// Data lines are 0 or more; non-data lines are -1.
+		std::vector<int> m_closingCounts;
+
+		// m_extremisLastmel: last melodic interval of the extremis lowest
+		// line at each original-file line (diatonic interval name as int,
+		// e.g. 4 or -5).  0 means no interval / rest.
+		std::vector<int> m_extremisLastmel;
+
 		bool m_hasSuspensionMarkersQ = false;
 
 		// options:
@@ -200,7 +228,7 @@ class Tool_autocadence : public HumTool {
 		bool m_intervalsOnlyQ           = false; // -I: show counterpoint interval infomation but
 		                                         //     do not do cadence analysis
 		bool m_printRawDiatonicPitchesQ = false; // -p: display m_pitches after filling
-		int  m_sequenceLength           = 7;     // maximum regex interval sequence length
+		int  m_sequenceLength           = 9;     // maximum regex interval sequence length
 		bool m_matchesQ                 = false; // -m: display sequences that match to cadence formula(s)
 		bool m_printSequenceInfoQ       = false; // -s: print list of interval sequences
 		bool m_countQ                   = false; // --count: print number of cadences found
@@ -216,6 +244,7 @@ class Tool_autocadence : public HumTool {
 		bool m_lowestQ                  = false; // -l: use lowest note to define suspensions instead of dissonance analysis
 		bool m_repeatQ                  = false; // -r: allow repeated notes
 		bool m_infoQ                    = false; // -i print info only
+		bool m_tableQ                   = false; // -t: print cadence-type count table
 		bool m_fileQ                    = false; // -f print filename info
 		bool m_lastQ                    = false;  // -L
 		bool m_markupQ                  = false; // -M
@@ -224,6 +253,8 @@ class Tool_autocadence : public HumTool {
 		bool m_triadQ                   = false; // -q|--root
 
 		int         m_cadenceCount = 0;
+		std::map<std::string, int> m_cadenceTypeCounts;
+		bool        m_deferTableQ = false; // -t: print table once in finally()
 		std::string m_marker = "@";
 		std::string m_suspensionMarker = "N";
 		std::string m_suspensionColor  = "crimson";

@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sun Feb 16 13:22:15 PST 2025
-// Last Modified: Sat Apr 19 06:52:08 CEST 2025
+// Last Modified: Tue Sep  8 18:40:00 CEST 2026
 // Filename:      tool-autocadence.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/src/tool-autocadence.cpp
 // Syntax:        C++11; humlib
@@ -72,179 +72,33 @@ Abandoned Cadential Voice Functions (also lowercase letters):
 	z - Abandoned Tenorizans
 
 
-First entry, which is an unornamented clausula vera:
+Example, an unornamented clausula vera:
 
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_-2:2, 8",T,C
+"^7_1:-2, 6_-2:2, 8",T,C
 
-(?:R_1|7_1|[\-]?._[\-]?[^1]):1 == means 7 in 7_1:-2 is a suspension.
-
+Since only starting points that got a suspension label from the dissonant filter
+are used, we know that the "7" above was the dissonant part of a suspension.
 
 7_1:-2 = slice interval is a seventh with the lower voice staying on the
 same pitch, and the upper voice going down a second (so the next harmonic
 interval will be 6.
 
-A "D" after a harmonic interval indicates a fourth above the lowest
-note in the score (considering all parts).
-
 With dissonance analysis, instead look for a suspension where the
 "s" and "g" (patient and agent) dissonance types form a seventh,
 and then the two-voice pattern from those two voices goes on to be
 7_1:-2, 6_-2:2, 8.
-
-Note maximum module length is 6 in the list below.
-
-At the end of the list there are a few patterns with no labels and
-one with only one label. I believe that was to fix cases of
-over-triggering in CRIM. In those cases, the blanks were supposed
-to overwrite any labels that might have been assigned. I left those
-in for now, but I don't think they will be necessary in Humdrum
-since we have proper dissonance detection.
-
-Ngram,LowerCVF,UpperCVF
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_-2:2, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:2, 8_1:-3, 6_-2:2, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:1, 6_-2:2, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:2, 8_1:-3, 6_1:1, 6_-2:2, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:-2, 5_-2:3, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:2, 8_1:-3, 6_1:-2, 5_-2:3, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:-2, 5_1:2, 6_-2:2, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:-2, 5_1:2, 6_1:1, 6_-2:2, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:1, 6_1:-2, 5_-2:3, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:1, 6_1:-2, 5_1:2, 6_-2:2, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:2, 7_1:2, 8_1:-3, 6_-2:2, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:2, 7_1:2, 8_1:-3, 6_1:-2, 5_-2:3, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:2, 7_1:-2, 6_1:-2, 5_-2:3, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:3, 8_1:-3, 6_-2:2, 8",T,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-3, 5_1:2, 6_-2:2, 8",T,C
-"^6_1:2, 7_1:-2, 6_-2:2, 8",T,C
-"^8_1:-2, 7_1:-2, 6_-2:2, 8",T,C
-"^(?:[\-]?.|R)_1:[\-]?., -7_-2:1, -6_2:-2, -8",C,T
-"^(?:[\-]?.|R)_1:[\-]?., -7_-2:1, -6_-2:1, -5_3:-2, -8",C,T
-"^(?:[\-]?.|R)_1:[\-]?., -7_-2:1, -6_-2:1, -5_2:1, -6_2:-2, -8",C,T
-"^(?:[\-]?.|R)_1:[\-]?., -7_-2:1, -6_1:1, -6_-2:1, -5_3:-2, -8",C,T
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_2:-2, (?:1|8)",C,T
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_-2:1, 4D?_3:-2, (?:1|8)",C,T
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_1:1, 3_-2:1, 4D?_3:-2, (?:1|8)",C,T
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_-2:1, 4D?_2:1, 3_2:-2, (?:1|8)",C,T
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_1:1, 3_-2:1, 4D?_2:1, 3_2:-2, (?:1|8)",C,T
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_1:1, 3_2:-2, (?:1|8)",C,T
-"^3_2:1, 2_-2:1, 3_2:-2, (?:1|8)",C,T
-"^8_-2:1, 2_-2:1, 3_2:-2, (?:1|8)",C,T
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_-2:-2, 3",c,T
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_-2:2, (?:1|-8)",T,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_1:-2, -4D?_-2:3, (?:1|-8)",T,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_1:1, -3_1:-2, -4D?_-2:3, (?:1|-8)",T,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_1:-2, -4D?_1:2, -3_-2:2, (?:1|-8)",T,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_2:2, 6",t,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:1, 6_1:-2, 5_1:2, 6_2:2, 6",t,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_2:2, -3",t,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_1:-2, -4D?_1:2, -3_2:2, -3",t,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_-2:R, R",T,y
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_2:2, 3",C,t
-"^3_2:1, 2_-2:1, 3_2:2, 3",C,t
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_1:1, 3_-2:1, 4D?_2:1, 3_2:2, 3",C,t
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_-2:1, 4D?_2:1, 3_1:1, 3_2:2, 3",C,t
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_R:-2, R",z,c
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_R:-2, R",z,c
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_R:R, R",z,y
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_1:1, -3_R:R, R",z,y
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_2:R, R",C,z
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_R:R, R",y,z
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_R:2, R",z,C
-"^(?:R_1|7_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:1, 6_R:2, R",z,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_R:2, R",z,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_1:1, -3_R:2, R",z,C
-"^(?:[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_R:2, R",x,C
-"^(?:R_1|4_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_R:-2, R",x,c
-"^3_1:2, 4D_1:-2, 3_R:2, R",x,C
-"^5_1:-2, 4D_1:-2, 3_R:2, R",x,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_-2:2, 5",T,A
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_-2:2, 5",T,A
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_-2:2, 5",T,A
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:-2, 2_-2:3, 5",T,A
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_-2:3, 5",T,A
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_-2:2, 5",T,A
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_1:1, 3_-2:2, 5",T,A
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_2:-2, -5",A,T
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_-2:1, -2_3:-2, -5",A,T
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_-2:1, -2_2:1, -3_2:-2, -5",A,T
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_1:1, -3_-2:1, -2_3:-2, -5",A,T
-"^(?:[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_-2:-2, 3",T,a
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_-5:2, 8",B,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:1, 3_-5:2, 8",B,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:1, 3_8:2, (?:4|-5)",L,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:-2, 2_-5:3, 8",B,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:-2, 2_8:3, (?:4|-5)",L,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_-5:3, 8",B,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_8:3, (?:4|-5)",L,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_-5:2, 8",B,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_8:2, (?:4|-5)",L,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_4:2, (?:1|8)",B,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_1:2, 3_-5:2, 8",B,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_1:2, 3_8:2, (?:4|-5)",L,C
-"^3_1:2, 4D_1:-2, 3_(?:4|-5):2, (?:1|8)",B,C
-"^5_1:-2, 4D_1:-2, 3_(?:4|-5):2, (?:1|8)",B,C
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_2:-5, -8",C,B
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_2:4, 1",C,B
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_2:4, -8",C,B
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_-2:1, -2_3:-5, -8",C,B
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_-2:1, -2_3:4, (?:1|-8)",C,B
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_1:1, -3_-2:1, -2_3:-5, -8",C,B
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_1:1, -3_-2:1, -2_3:4, (?:1|-8)",C,B
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_-2:1, -2_2:1, -3_2:(?:-5|4), -8",C,B
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_-2:1, -2_2:1, -3_2:4, (?:1|-8)",C,B
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_2:2, 3",b,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:1, 3_2:2, 3",b,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:-2, 2_2:2, 3",b,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_2:2, 3",b,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_2:2, 3",b,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:2, 4D_1:2, 5_1:-3, 3_2:2, 3",b,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_4:2, (?:8|1)",B,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_8:2, (?:4|-5)",L,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_-3:2, 6",u,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:1, 3_-3:2, 6",u,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:-2, 2_-3:3, 6",u,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_-3:3, 6",u,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_-3:2, 6",u,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_1:2, 3_-3:2, 6",u,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_-2:1, 4D_-2:2, 6",u,C
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_2:-3, -6",C,u
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_-2:1, -2_3:-3, -6",C,u
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_1:1, -3_-2:1, -2_3:-3, -6",C,u
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_-2:1, -2_2:1, -3_2:-3, -6",C,u
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 2_1:-2, 8_(?:5|-4):2, 5",P,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 2_1:-2, 1_-4:2, 5",P,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 2_1:-2, 8_1:1, 8_(?:5|-4):2, 5",P,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_(?:5|-4):2, 3",p,C
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]):1, 4D_1:-2, 3_(?:4|-5):(?:4|-5), 3",B,c
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_(?:4|-5):4, -3",c,B
-"^(?:[\-]?.|R)_1:[\-]?., -4D_-2:1, -3_-2:(?:4|-5), (?:-6|3)",c,B
-"^(?:R_1|4D?_1|[\-]?._[\-]?[^1]), 4D_1:-2, 3_1:-2, 2_1:2, 3_1:1, 3_-5:2, 8",B,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_-2:4, 3",T,c
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_(?:-5|4):2, 4D?",Q,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 7_1:-2, 6_1:1, 6_(?:-5|4):2, 4D?",Q,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_-5:2, 4D?",Q,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, -2_1:-2, -3_4:2, -5",Q,C
-"^(?:[\-]?.|R)_1:[\-]?., 2_-2:1, 3_2:(?:-5|4), 5",C,Q
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 2_1:-2, 8_-2:2, 3",s,
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 2_1:-2, (?:1|8)_-3:2, 4D?",S,C
-"^(?:R_1|[\-]?._[\-]?[^1]):1, 2_1:-2, (?:1|8)_1:1, (?:1|8)_-3:2, 4D?",S,C
-"^[^R]_1, 7_1:-2, 6_-2:4, 3",c,T
-"^[^R]_1, 2_1:-2, (?:1|8)_-3:2, 4D?",,
-"^[^R]_1:, 4D_1:-2, 3_1:-2, 2_1:2, 3_-3:2, 6",,
-"^[^R]_1:[\-]?., 7_1:-2, 6_-2:2, 8",,
-"^(?:[\-]?.|R)_1:[\-]?., 7_1:-2, 6_R:-2, R",,
-
- */
+*/
 
 #include "tool-autocadence.h"
 #include "tool-dissonant.h"
+#include "tool-extremis.h"
 #include "Convert.h"
 #include "HumRegex.h"
-#include "tool-dissonant.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
+#include <iterator>
 
 using namespace std;
 
@@ -276,6 +130,7 @@ Tool_autocadence::Tool_autocadence(void) {
 	define("color=s:dodgerblue",         "Color cadence formula notes with given color");
 	define("count|match-count=b",        "Return number of cadence formulas that match");
 	define("i|info=b",                   "Show only information not score");
+	define("t|cadence-table=b",          "Show a table of the counts of each cadence label");
 
 	define("M|analytic-markup|markup=b", "Show melodic interval to last note");
 	define("L|last-melody=b",            "Show melodic interval to last note");
@@ -291,6 +146,9 @@ Tool_autocadence::Tool_autocadence(void) {
 //
 
 bool Tool_autocadence::run(HumdrumFileSet& infiles) {
+	// Input may continue in later file sets (command-line stream), so
+	// accumulate -t counts and print the table once in finally().
+	m_deferTableQ = true;
 	bool status = true;
 	for (int i=0; i<infiles.getCount(); i++) {
 		status &= run(infiles[i]);
@@ -353,6 +211,7 @@ void Tool_autocadence::initialize(void) {
 	m_showFormulaIndexQ        =  getBoolean("show-formula-index");
 	m_repeatQ                  =  getBoolean("repeat");
 	m_infoQ                    =  getBoolean("info");
+	m_tableQ                   =  getBoolean("cadence-table");
 	m_lowestQ                  =  getBoolean("lowest");
 	m_showSuspensionsQ         = !getBoolean("do-not-show-suspensions");
 	m_markupQ                  =  getBoolean("analytic-markup");
@@ -369,10 +228,28 @@ void Tool_autocadence::initialize(void) {
 		m_triadQ   = true;
 	}
 
-	prepareCadenceDefinitions();
-	prepareCadenceLabels();
-	prepareCvfNames();
-	prepareDissonanceNames();
+	// The cadence tables (including the compiled regexes) do not depend on
+	// the options, so build them only once rather than for every input file.
+	if (m_definitions.empty()) {
+		prepareCadenceDefinitions();
+		prepareCadenceLabels();
+		prepareCvfNames();
+		prepareDissonanceNames();
+	}
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::finally -- Print the cadence-type table (-t) after
+//     all input files from a file set/stream have been processed.
+//
+
+void Tool_autocadence::finally(void) {
+	if (m_tableQ && m_deferTableQ) {
+		printCadenceTable();
+	}
 }
 
 
@@ -384,13 +261,14 @@ void Tool_autocadence::initialize(void) {
 
 void Tool_autocadence::processFile(HumdrumFile& infile) {
 	m_info.str("");
+	if (!m_deferTableQ) {
+		m_cadenceTypeCounts.clear();
+	}
 	m_barnum = infile.getMeasureNumbers();
 	m_root.resize(infile.getLineCount());
 
 	fillInLastMelodicInterval(infile);
-	if (m_triadQ || m_infoQ) {
-		fillInMajorMinor(infile);
-	}
+	fillInMajorMinor(infile);
 
 	// fill m_pitches and m_lowestPitch and m_lowestPitchIndex
 	preparePitchInfo(infile);
@@ -401,6 +279,10 @@ void Tool_autocadence::processFile(HumdrumFile& infile) {
 
 	// identify dissonances
 	prepareDissonances(infile);
+
+	// Closing rests must be marked before interval pairings are built,
+	// so a simultaneous close-to-rest counts as an observation.
+	infile.analyzeClosingRests();
 
 	// fill m_intervals
 	prepareIntervalInfo(infile);
@@ -428,9 +310,23 @@ void Tool_autocadence::processFile(HumdrumFile& infile) {
 		}
 	}
 
+	prepareAuthenticBAnalyses(infile);
+
 	// markup score with matches and CVF
 	markupScore(infile);
 	printScore(infile);
+	if (m_tableQ) {
+		// Cadence-type counts are collected while printing the score.
+		if (m_deferTableQ) {
+			// Counts accumulate across all input files; the table is
+			// printed once in finally().
+			m_humdrum_text.str("");
+		} else {
+			// Single-file use (such as !!!filter: autocadence -t).
+			printCadenceTable();
+		}
+		return;
+	}
 
 	if (m_infoQ) {
 		m_humdrum_text.str("");
@@ -456,6 +352,7 @@ void Tool_autocadence::fillInMajorMinor(HumdrumFile& infile) {
 	options["class"] = false; // show list of unique pitch classes
 	options["rest"] = false;  // include rest
 	options["low"] = false;   // sort pitches from low to high
+	options["partial"] = true; // include incomplete triads (major/minor thirds)
 
 
 	for (int i=0; i<infile.getLineCount(); i++) {
@@ -800,6 +697,33 @@ void Tool_autocadence::addMatchToScore(HumdrumFile& infile, int matchIndex) {
 	}
 	endU->setValue("auto", "cvf", valueU);
 
+	bool altizansL   = (funcL == "A") || (funcL == "a");
+	bool altizansU   = (funcU == "A") || (funcU == "a");
+	bool tenorizansL = (funcL == "T") || (funcL == "t") || (funcL == "z");
+	bool tenorizansU = (funcU == "T") || (funcU == "t") || (funcU == "z");
+	if (altizansL || altizansU) {
+		// Altizans present: Phrygian only via initial +6/-6; skip tenorizans test.
+		int semis = getSignedSemitoneHarmonic(startL, startU);
+		if ((semis == 6) || (semis == -6)) {
+			if (altizansL) {
+				endL->setValue("auto", "phrygian", "true");
+			}
+			if (altizansU) {
+				endU->setValue("auto", "phrygian", "true");
+			}
+		}
+	} else if (tenorizansL || tenorizansU) {
+		int semis = getSignedSemitoneHarmonic(startL, startU);
+		if ((semis == 11) || (semis == 1) || (semis == -1) || (semis == -11)) {
+			if (tenorizansL) {
+				endL->setValue("auto", "phrygian", "true");
+			}
+			if (tenorizansU) {
+				endU->setValue("auto", "phrygian", "true");
+			}
+		}
+	}
+
 	if (m_colorQ) {
 		colorNotes(startL, endL);
 		colorNotes(startU, endU);
@@ -1080,6 +1004,35 @@ void Tool_autocadence::printMatchCount(void) {
 
 //////////////////////////////
 //
+// Tool_autocadence::printCadenceTable -- Print cadence-label counts
+//      (summed over all input files when reading a file set/stream) as a
+//      Humdrum table (**count, **cadence), sorted by count descending.
+//      Only labels that occur at least once are listed.
+//
+
+void Tool_autocadence::printCadenceTable(void) {
+	vector<pair<string, int>> rows(m_cadenceTypeCounts.begin(),
+			m_cadenceTypeCounts.end());
+	sort(rows.begin(), rows.end(),
+			[](const pair<string, int>& a, const pair<string, int>& b) {
+				if (a.second != b.second) {
+					return a.second > b.second;
+				}
+				return a.first < b.first;
+			});
+
+	m_humdrum_text.str("");
+	m_humdrum_text << "**count\t**cadence" << endl;
+	for (int i=0; i<(int)rows.size(); i++) {
+		m_humdrum_text << rows[i].second << "\t" << rows[i].first << endl;
+	}
+	m_humdrum_text << "*-\t*-" << endl;
+}
+
+
+
+//////////////////////////////
+//
 // Tool_autocadence::searchIntervalSequences --
 //
 //
@@ -1095,18 +1048,23 @@ void Tool_autocadence::printMatchCount(void) {
 //
 
 void Tool_autocadence::searchIntervalSequences(void) {
-	HumRegex hre;
 	m_matches.clear();
 	for (int i=0; i<(int)m_sequences.size(); i++) {
 		for (int j=0; j<(int)m_sequences[i].size(); j++) {
 			for (int k=0; k<(int)m_sequences[i][j].size(); k++) {
 				string& feature = get<0>(m_sequences.at(i).at(j).at(k));
 				for (int m=0; m<(int)m_definitions.size(); m++) {
-					if (hre.search(feature, m_definitions.at(m).m_regex)) {
+					CadenceDefinition& def = m_definitions.at(m);
+					std::regex_constants::match_flag_type flags = std::regex_constants::match_default;
+					if (!def.m_regex.empty() && (def.m_regex[0] == '^')) {
+						flags = std::regex_constants::match_continuous;
+					}
+					if (regex_search(feature, def.m_compiled, flags)) {
 						vector<int>& matches = get<3>(m_sequences.at(i).at(j).at(k));
 						// cerr << "FOUND MATCH: " << m << endl;
 						matches.push_back(m);
 						m_matches.emplace_back(vector<int>{i, j, k});
+						break;
 					}
 				}
 			}
@@ -1339,6 +1297,12 @@ void Tool_autocadence::prepareSinglePairSequences(HumdrumFile& infile, int vinde
 		}
 		HTp lower = get<1>(m_intervals.at(i).at(vindex).at(pindex));
 		HTp upper = get<2>(m_intervals.at(i).at(vindex).at(pindex));
+		// Cadence formulas now start at the suspension itself.  Require a
+		// patient/agent pair (s/S against g/G), or a suspension without
+		// agent (m/M) against any other sounding voice.
+		if (!isCadentialSuspensionPair(lower, upper)) {
+			continue;
+		}
 		string sequence = generateSequenceString(infile, i, vindex, pindex);
 // cerr << "ADDING SEQUENCE: " << sequence << endl;
 		m_sequences.at(vindex).at(pindex).emplace_back(sequence, lower, upper, vector<int>{});
@@ -1667,10 +1631,17 @@ void Tool_autocadence::printIntervalDataLineScore(HumdrumFile& infile,
 				labelline << "!LO:TX:a:B:cvf";
 				labelline << ":color=" << m_color;
 				labelline << ":t=" << label;
+				// Full multi-label annotations stay on the note; the cadence
+				// combo only uses each voice's first CVF letter.
+				string firstLabel = label;
+				size_t comma = label.find(',');
+				if (comma != string::npos) {
+					firstLabel = label.substr(0, comma);
+				}
 				if (clabel.empty()) {
-					clabel += label;
+					clabel += firstLabel;
 				} else {
-					clabel += "," + label;
+					clabel += "," + firstLabel;
 				}
 				if (m_popupQ) {
 				 	string fname = getFunctionNames(label);
@@ -1690,41 +1661,41 @@ void Tool_autocadence::printIntervalDataLineScore(HumdrumFile& infile,
 	if (!clabel.empty()) {
 		string slabel = sortUniqueChars(clabel);
 		string cadence = getCadenceLabel(slabel, infile, index);
-		//cerr << endl;
-		//cerr << "!! WLABEL" << slabel << endl;
-		//cerr << "!! Cadence" << cadence << endl;
-		//cerr << endl;
-		string infolabel = cadence;
-		if (cadence.empty()) {
-			cadence = "UNKNOWN";
-			infolabel = cadence;
-		} else {
+		// Empty string = suppressor entry in m_cadenceLabels: no cadence annotation.
+		if (!cadence.empty()) {
+			string infolabel = cadence;
+			bool isPhrygian = getPhrygian(infile, index);
+			if (isPhrygian) {
+				if (infolabel.compare(0, 7, "Evaded ") == 0) {
+					infolabel.insert(7, "Phrygian ");
+				} else if (infolabel.compare(0, 10, "Abandoned ") == 0) {
+					infolabel.insert(10, "Phrygian ");
+				} else {
+					infolabel = "Phrygian " + infolabel;
+				}
+			}
+			cadence = infolabel;
 			HumRegex hre;
 			hre.replaceDestructive(cadence, "\\n", " ", "g");
 			if (cadence.find("\\n") != std::string::npos) {
 				cadence += "\\n";
 			}
-		}
-		bool isPhrygian = getPhrygian(infile, index);
-		//if (infolabel.find("Vera") != string::npos) {
-		cadenceline << "!!LO:TX:a:B:rj:color=red:cadence:t=";
-		if (isPhrygian) {
-			cadence   = "Phrygian\\n" + cadence;
-			infolabel = "Phrygian " + infolabel;
-		}
-		if (infolabel.find("Authentic") != string::npos) {
-			if (!m_root[index].empty()) {
-				cadence += "\\n(" + m_root[index] + ")";
+			cadenceline << "!!LO:TX:a:B:rj:color=red:cadence:t=";
+			cadenceline << cadence;
+			if (m_tableQ) {
+				m_cadenceTypeCounts[infolabel]++;
+			}
+			if (m_infoQ) {
+				m_info << "cvf=" << slabel << "\tcadence=" << infolabel << "\\nZZZ" << "\tM=" << m_barnum.at(index) << "\tfile=" << infile.getFilename() << endl;
 			}
 		}
-		if (infolabel.find("Vera") != string::npos) {
-			if (!m_root[index].empty()) {
-				cadence += " (" + m_root[index] + ")";
-			}
+	} else if (meetsAuthenticBCriteria(infile, index)) {
+		cadenceline << "!!LO:TX:a:B:rj:color=red:cadence:t=AuthenticB";
+		if (m_tableQ) {
+			m_cadenceTypeCounts["AuthenticB"]++;
 		}
-		cadenceline << cadence;
 		if (m_infoQ) {
-			m_info << "cvf=" << slabel << "\tcadence=" << infolabel << "\\nZZZ" << "\tM=" << m_barnum.at(index) << "\tfile=" << infile.getFilename() << endl;
+			m_info << "cvf=\tcadence=AuthenticB\\nZZZ" << "\tM=" << m_barnum.at(index) << "\tfile=" << infile.getFilename() << endl;
 		}
 	}
 
@@ -1836,43 +1807,578 @@ void Tool_autocadence::printIntervalDataLineScore(HumdrumFile& infile,
 
 //////////////////////////////
 //
-// Tool_autocadence::getCadenceLabel
-//
-// Ammdedation: If the CVF point forms an incorrect basizans, then label it AuthenticB
+// Tool_autocadence::getCadenceLabel -- Look up the CVF combination label,
+//     then apply AuthenticB if every AuthenticB analysis strand passes.
+//     AuthenticB does not require a CVF match; that case is handled when
+//     printing a line that has no CVF labels.
+//     Returns "UNKNOWN" for CVF combos absent from m_cadenceLabels.
+//     Returns an empty string for suppressor entries (explicit "" values),
+//     which means no cadence annotation should be written.
 //
 
 string Tool_autocadence::getCadenceLabel(const string& cvflabel, HumdrumFile &infile, int index) {
-	//cerr << "INDEX = " << index << endl;
-	string label = m_cadenceLabels[cvflabel];
-	int lowestIndex = m_lowestPitchIndex.at(index);
-	//cerr << "LOWESTINDEX = " << lowestIndex << endl;
-	HTp token = infile.token(index, lowestIndex);
-	int lastmel = token->getValueInt("auto", "lastmel");
-	if (lastmel == -5 || lastmel == 4) {
+	if (meetsAuthenticBCriteria(infile, index)) {
 		return "AuthenticB";
 	}
-	return label;
-
+	auto it = m_cadenceLabels.find(cvflabel);
+	if (it == m_cadenceLabels.end()) {
+		return "UNKNOWN";
+	}
+	return it->second;
 }
 
 
 
 //////////////////////////////
 //
-// Tool_autocadence::getPhrygian -- true if approached by a m2.
+// Tool_autocadence::prepareAuthenticBAnalyses -- Run supporting analyses used
+//     by AuthenticB.  Add new strand preparations here as they are introduced.
 //
 
-bool Tool_autocadence::getPhrygian(HumdrumFile& infile, int index) {
-	for (int i=0; i<(int)m_lastmel.at(index).size(); i++) {
-		HTp token = infile[index].token(i);
-		string cvf = token->getValue("auto", "cvf");
-		if ((cvf == "T") || (cvf == "t") || (cvf == "z")) {
-			if (m_lastmel.at(index).at(i) == "-5") {
-				return true;
+void Tool_autocadence::prepareAuthenticBAnalyses(HumdrumFile& infile) {
+	prepareClosingCounts(infile);
+	prepareExtremisBass(infile);
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::prepareClosingCounts -- Count closing voices at each
+//     observation point, using the same metric as Tool_closing.  The closing
+//     tool itself is left unchanged; only its analysis API is reused here.
+//
+
+void Tool_autocadence::prepareClosingCounts(HumdrumFile& infile) {
+	m_closingCounts.clear();
+	m_closingCounts.resize(infile.getLineCount(), -1);
+
+	// A staff with more than one layer can have several closing events on the
+	// same line, but it is a single voice, so count each track only once.
+	vector<bool> counted(infile.getTrackCount() + 1, false);
+
+	for (int i=0; i<infile.getLineCount(); i++) {
+		if (!infile[i].isData()) {
+			continue;
+		}
+		fill(counted.begin(), counted.end(), false);
+		int sum = 0;
+		for (int j=0; j<infile[i].getFieldCount(); j++) {
+			HTp token = infile.token(i, j);
+			if (!infile.isClosingEvent(token)) {
+				continue;
+			}
+			int track = token->getTrack();
+			if (counted[track]) {
+				continue;
+			}
+			counted[track] = true;
+			sum++;
+		}
+		m_closingCounts[i] = sum;
+	}
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::meetsAuthenticBCriteria -- Combine independent analysis
+//     strands that must all pass before a cadence is labeled AuthenticB.
+//     Add further strands as additional checks below.
+//
+
+bool Tool_autocadence::meetsAuthenticBCriteria(HumdrumFile& infile, int index) {
+	// Strand 1: extremis lowest line approaches by an "incorrect" bassizans
+	// (falling fifth or rising fourth), including voice transfers.
+	if (!hasIncorrectBassizans(index)) {
+		return false;
+	}
+
+	// Strand 2: at least one voice closes at the cadential arrival.
+	if (!hasClosingVoicesAtArrival(index)) {
+		return false;
+	}
+
+	// Strand 3: no suspension (s/g/S/G) from the arrival through two minims later.
+	if (!hasNoEnsuingSuspension(infile, index)) {
+		return false;
+	}
+
+	// Strand 4: last --root observation before the arrival is an uppercase
+	// letter (major triad or major third).  CVF matches are not required.
+	if (!hasPreviousMajorSonority(index)) {
+		return false;
+	}
+
+	// Strand 5: a voice moves from the leading tone up by semitone onto
+	// the root of the arrival chord, in that same voice, at the arrival.
+	if (!hasLeadingToneToRoot(infile, index)) {
+		return false;
+	}
+
+	return true;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::prepareExtremisBass -- Get the synthetic lowest-line
+//     events from Tool_extremis, then store the melodic interval from the
+//     previous event on the input line where each note event starts.
+//     Continuation lines of an event (null tokens and tie sustainations)
+//     keep 0 so AuthenticB labels only the bass arrival.
+//
+
+void Tool_autocadence::prepareExtremisBass(HumdrumFile& infile) {
+	m_extremisLastmel.clear();
+	m_extremisLastmel.resize(infile.getLineCount(), 0);
+
+	Tool_extremis extremis;
+	vector<Tool_extremis::SynthEvent> events;
+	extremis.getEvents(infile, events);
+
+	for (int i=1; i<(int)events.size(); i++) {
+		const Tool_extremis::SynthEvent& event = events[i];
+		const Tool_extremis::SynthEvent& previous = events[i-1];
+		if (event.isRest || previous.isRest) {
+			// Intervals into or out of a rest are "R" (stored as 0).
+			continue;
+		}
+		string iname = getIntervalName(to_string(event.b40 - previous.b40));
+		int value = 0;
+		if (iname != "R") {
+			try {
+				value = stoi(iname);
+			} catch (...) {
+				value = 0;
+			}
+		}
+		m_extremisLastmel.at(event.startLine) = value;
+	}
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::hasIncorrectBassizans -- True when the extremis lowest
+//     line attacks at this slice, approached by a falling fifth (-5) or a
+//     rising fourth (4), including compound equivalents (e.g. rising 11th,
+//     falling 12th) and voice transfers.
+//
+
+bool Tool_autocadence::hasIncorrectBassizans(int index) {
+	if ((index < 0) || (index >= (int)m_extremisLastmel.size())) {
+		return false;
+	}
+	int lastmel = m_extremisLastmel[index];
+	// Reduce compound diatonic intervals by octave (7) into a simple form.
+	// 11→4, 18→4, -12→-5, etc.
+	int n = lastmel;
+	while (n > 8) {
+		n -= 7;
+	}
+	while (n < -8) {
+		n += 7;
+	}
+	if ((n == 4) || (n == -5)) {
+		return true;
+	}
+	// getIntervalName leaves some compound base-40 diffs unmapped (P11=57,
+	// P12=63, …).  Treat those as rising-fourth / falling-fifth classes.
+	int rem = std::abs(lastmel) % 40;
+	if ((lastmel > 0) && (rem == 17)) {
+		return true;  // rising perfect fourth (+ octaves)
+	}
+	if ((lastmel < 0) && (rem == 23)) {
+		return true;  // falling perfect fifth (+ octaves)
+	}
+	return false;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::hasClosingVoicesAtArrival -- True when the closing-voice
+//     count at the cadential arrival is greater than 0.  A 0 (or non-data
+//     line) blocks the AuthenticB label.
+//
+
+bool Tool_autocadence::hasClosingVoicesAtArrival(int index) {
+	if ((index < 0) || (index >= (int)m_closingCounts.size())) {
+		return false;
+	}
+	return m_closingCounts[index] > 0;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::hasNoEnsuingSuspension -- True when no voice has a
+//     suspension or agent label (s, g, S, G) from the cadential arrival
+//     through two minims later, inclusive of both endpoints.  A minim is a
+//     half note (Humdrum duration 2).
+//
+
+bool Tool_autocadence::hasNoEnsuingSuspension(HumdrumFile& infile, int index) {
+	if ((index < 0) || (index >= infile.getLineCount())) {
+		return false;
+	}
+
+	HumNum start = infile[index].getDurationFromStart();
+	HumNum stop  = start + HumNum(4);  // two minims later
+
+	for (int i=index; i<infile.getLineCount(); i++) {
+		if (!infile[i].isData()) {
+			continue;
+		}
+		HumNum t = infile[i].getDurationFromStart();
+		if (t > stop) {
+			break;
+		}
+		for (int j=0; j<infile[i].getFieldCount(); j++) {
+			HTp token = infile.token(i, j);
+			if (!token->isKern()) {
+				continue;
+			}
+			if (isSuspensionLabel(token->getValue("auto", "dissonance"))) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::isSuspensionLabel -- True for suspension-family labels
+//     from the dissonance analysis: binary/ternary suspension or agent
+//     (s/S/g/G), fake suspension (f/F), or suspension without agent (m/M).
+//
+
+bool Tool_autocadence::isSuspensionLabel(const string& label) {
+	if (label.empty()) {
+		return false;
+	}
+	for (char c : label) {
+		if ((c == 's') || (c == 'S') || (c == 'g') || (c == 'G') ||
+				(c == 'f') || (c == 'F') || (c == 'm') || (c == 'M')) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::isCadentialSuspensionPair -- True when this sounding
+//     voice pair should open a cadence-formula search:
+//       * s/S only against a paired g/G (patient against agent)
+//       * m/M (suspension without agent) against any other sounding voice
+//
+
+bool Tool_autocadence::isCadentialSuspensionPair(HTp lower, HTp upper) {
+	if ((!lower) || (!upper)) {
+		return false;
+	}
+	string dissL = lower->getValue("auto", "dissonance");
+	string dissU = upper->getValue("auto", "dissonance");
+
+	auto hasChars = [](const string& label, const char* chars) -> bool {
+		if (label.empty()) {
+			return false;
+		}
+		for (char c : label) {
+			for (const char* p = chars; *p; p++) {
+				if (c == *p) {
+					return true;
+				}
+			}
+		}
+		return false;
+	};
+
+	// Suspension without agent: pair with any other sounding voice.
+	if (hasChars(dissL, "mM") || hasChars(dissU, "mM")) {
+		return true;
+	}
+
+	// Normal suspension: patient (s/S) only against agent (g/G).
+	bool patientL = hasChars(dissL, "sS");
+	bool patientU = hasChars(dissU, "sS");
+	bool agentL   = hasChars(dissL, "gG");
+	bool agentU   = hasChars(dissU, "gG");
+	return (patientL && agentU) || (patientU && agentL);
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::hasPreviousMajorSonority -- True when the last --root
+//     observation before the arrival starts with an uppercase letter, which
+//     is the proxy for a major triad or a major third.
+//
+
+bool Tool_autocadence::hasPreviousMajorSonority(int index) {
+	for (int i=index-1; i>=0; i--) {
+		if (i >= (int)m_root.size()) {
+			continue;
+		}
+		const string& root = m_root[i];
+		if (root.empty() || (root == ".")) {
+			continue;
+		}
+		return isUppercaseRootObservation(root);
+	}
+	return false;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::isUppercaseRootObservation -- True when a --root token
+//     contains an alphabetic pitch letter that is uppercase.
+//
+
+bool Tool_autocadence::isUppercaseRootObservation(const string& root) {
+	for (unsigned char c : root) {
+		if (std::isalpha(c)) {
+			return std::isupper(c);
+		}
+	}
+	return false;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::hasLeadingToneToRoot -- True when a voice attacks the
+//     arrival-chord root at the cadential arrival, approached in that same
+//     voice by a rising semitone (the leading tone).  A leading tone that
+//     merely sounds in another voice, or that does not resolve in the same
+//     voice, does not count.  A unison/octave arrival has no --root token;
+//     the shared sounding pitch class is still treated as the root.
+//
+
+bool Tool_autocadence::hasLeadingToneToRoot(HumdrumFile& infile, int index) {
+	if ((index < 0) || (index >= infile.getLineCount())) {
+		return false;
+	}
+	if (!infile[index].isData()) {
+		return false;
+	}
+
+	int rootPc = arrivalRootPitchClass(infile, index);
+	if (rootPc < 0) {
+		return false;
+	}
+
+	for (int j=0; j<infile[index].getFieldCount(); j++) {
+		HTp token = infile.token(index, j);
+		if (!token->isKern()) {
+			continue;
+		}
+		if (token->isNull() || token->isRest() || token->isSecondaryTiedNote()) {
+			continue;
+		}
+
+		vector<int> arrivalMidi = token->getMidiPitches();
+		HTp prev = token->getPreviousToken();
+		while (prev) {
+			if (prev->isData() && !prev->isNull()) {
+				break;
+			}
+			prev = prev->getPreviousToken();
+		}
+		if (!prev || prev->isRest()) {
+			continue;
+		}
+		vector<int> prevMidi = prev->getMidiPitches();
+
+		for (int arrival : arrivalMidi) {
+			int arr = arrival < 0 ? -arrival : arrival;
+			if (arr <= 0) {
+				continue;
+			}
+			if ((arr % 12) != rootPc) {
+				continue;
+			}
+			for (int previous : prevMidi) {
+				int pre = previous < 0 ? -previous : previous;
+				if (pre <= 0) {
+					continue;
+				}
+				if (arr - pre == 1) {
+					return true;
+				}
 			}
 		}
 	}
 	return false;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::arrivalRootPitchClass -- Pitch class (C=0) of the
+//     arrival sonority.  Prefer the --root observation; when that is missing
+//     (unison/octave arrivals print "."), use the single shared sounding
+//     pitch class.  Mixed unclassified sonorities return -1.
+//
+
+int Tool_autocadence::arrivalRootPitchClass(HumdrumFile& infile, int index) {
+	if (index < 0 || index >= infile.getLineCount()) {
+		return -1;
+	}
+	if (index < (int)m_root.size()) {
+		int rootPc = rootObservationToPitchClass(m_root[index]);
+		if (rootPc >= 0) {
+			return rootPc;
+		}
+	}
+
+	vector<int> midis = infile[index].getMidiPitchesResolveNull();
+	int found = -1;
+	for (int midi : midis) {
+		int m = midi < 0 ? -midi : midi;
+		if (m <= 0) {
+			continue;
+		}
+		int pc = m % 12;
+		if (found < 0) {
+			found = pc;
+		} else if (found != pc) {
+			return -1;
+		}
+	}
+	return found;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::rootObservationToPitchClass -- Pitch class (C=0) of a
+//     --root token such as "F", "B♭", or "g".  Returns -1 if none.
+//
+
+int Tool_autocadence::rootObservationToPitchClass(const string& root) {
+	if (root.empty() || (root == ".")) {
+		return -1;
+	}
+
+	int pc = -1;
+	int i = 0;
+	for (; i<(int)root.size(); i++) {
+		char letter = std::toupper((unsigned char)root[i]);
+		switch (letter) {
+			case 'C': pc =  0; break;
+			case 'D': pc =  2; break;
+			case 'E': pc =  4; break;
+			case 'F': pc =  5; break;
+			case 'G': pc =  7; break;
+			case 'A': pc =  9; break;
+			case 'B': pc = 11; break;
+			default: continue;
+		}
+		i++;
+		break;
+	}
+	if (pc < 0) {
+		return -1;
+	}
+
+	while (i < (int)root.size()) {
+		if (root[i] == '#') {
+			pc++;
+			i++;
+			continue;
+		}
+		if (root[i] == '-') {
+			pc--;
+			i++;
+			continue;
+		}
+		if (root.compare(i, 3, "\u266D") == 0) { // ♭
+			pc--;
+			i += 3;
+			continue;
+		}
+		if (root.compare(i, 3, "\u266F") == 0) { // ♯
+			pc++;
+			i += 3;
+			continue;
+		}
+		break;
+	}
+
+	pc %= 12;
+	if (pc < 0) {
+		pc += 12;
+	}
+	return pc;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::getPhrygian -- true when addMatchToScore marked a
+//     formula as Phrygian: A/a with first harmonic ±6 (aug. 4th), or else
+//     T/t/z with first harmonic ±1 or ±11.  A/a short-circuits the
+//     tenorizans test for that match.
+//
+
+bool Tool_autocadence::getPhrygian(HumdrumFile& infile, int index) {
+	for (int i=0; i<infile[index].getFieldCount(); i++) {
+		HTp token = infile[index].token(i);
+		if (!token->getValue("auto", "phrygian").empty()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::getSignedSemitoneHarmonic -- Signed MIDI-semitone
+//     harmonic interval between lower-staff and upper-staff notes of a
+//     cadence-formula slice, reduced modulo 12 into [-11, 11].  Unison
+//     and octave map to 0.  Returns 0 if either pitch is missing.
+//
+
+int Tool_autocadence::getSignedSemitoneHarmonic(HTp lower, HTp upper) {
+	auto firstMidi = [](HTp token) -> int {
+		vector<int> midis = token->getMidiPitchesResolveNull();
+		for (int midi : midis) {
+			int absMidi = midi < 0 ? -midi : midi;
+			if (absMidi > 0) {
+				return absMidi;
+			}
+		}
+		return 0;
+	};
+
+	int midiL = firstMidi(lower);
+	int midiU = firstMidi(upper);
+	if ((midiL == 0) || (midiU == 0)) {
+		return 0;
+	}
+	return (midiU - midiL) % 12;
 }
 
 
@@ -2058,7 +2564,8 @@ void Tool_autocadence::preparePitchInfo(HumdrumFile& infile) {
 void Tool_autocadence::prepareLowestPitches(HumdrumFile& infile) {
 	m_lowestPitch.clear();
 	m_lowestPitch.resize(m_pitches.size());
-	std::fill(m_lowestPitch.begin(), m_lowestPitch.end(), 0);
+	// -1 = unset; first sounding pitch on the line replaces it.
+	std::fill(m_lowestPitch.begin(), m_lowestPitch.end(), -1);
 
 	m_lowestPitchIndex.clear();
 	m_lowestPitchIndex.resize(m_pitches.size());
@@ -2083,6 +2590,10 @@ void Tool_autocadence::prepareLowestPitches(HumdrumFile& infile) {
 				}
 			}
 
+		}
+		if (m_lowestPitch.at(line) == -1) {
+			m_lowestPitch.at(line) = 0;
+			continue;
 		}
 		HTp ltoken = infile.token(line, m_lowestPitchIndex.at(line));
 		ltoken->setValue("auto", "lowest", "xxx");
@@ -2251,7 +2762,10 @@ void Tool_autocadence::generateCounterpointStrings(vector<HTp>& kspines, int vin
 		return;
 	}
 
-	// Remove cases where there is not at least one note attack in the pairings.
+	// Keep slices with a note attack in either voice, a rest onset in either
+	// voice (so a rest against a sustained/tied note is not skipped), or where
+	// both voices move to a closing rest.  Double-sustains (no new attack and
+	// no rest onset) are skipped.
 	vector<vector<HTp>> newpairings(2);
 	newpairings[0].reserve(10000);
 	newpairings[1].reserve(10000);
@@ -2259,9 +2773,16 @@ void Tool_autocadence::generateCounterpointStrings(vector<HTp>& kspines, int vin
 		if (pairings[0][i]->isNullToken() && pairings[1][i]->isNullToken()) {
 			continue;
 		}
-		if (!(pairings[0][i]->isNoteAttack() || pairings[1][i]->isNoteAttack())) {
-			// both notes are sustaining in this slice.
-			// deal with rests here as well, allowing one rest slice between note pairings.
+		bool attackQ = pairings[0][i]->isNoteAttack() ||
+				pairings[1][i]->isNoteAttack();
+		bool restOnsetQ = (!pairings[0][i]->isNullToken() && pairings[0][i]->isRest()) ||
+				(!pairings[1][i]->isNullToken() && pairings[1][i]->isRest());
+		bool closingRestQ = pairings[0][i]->isRest() &&
+				pairings[1][i]->isRest() &&
+				pairings[0][i]->getValueBool("auto", "closingRest") &&
+				pairings[1][i]->getValueBool("auto", "closingRest");
+		if (!attackQ && !restOnsetQ && !closingRestQ) {
+			// Skip slices where both voices sustain without a new attack or rest.
 			continue;
 		}
 		//if (pairings[0][i]->isRest() || pairings[1][i]->isRest()) {
@@ -2320,8 +2841,11 @@ string Tool_autocadence::generateCounterpointString(vector<vector<HTp>>& pairing
 	}
 
 	// Determine if there is a fourth above the lowest sounding note
-	// for the current pair of voices:
+	// for the current pair of voices (either member of the pair may be
+	// the fourth above the bass; when voices are crossed the lower staff
+	// can hold that fourth while the upper staff holds the bass).
 	int lowU = 0;
+	int lowL = 0;
 	int lowest = m_lowestPitch.at(lineIndex);
 	if (lowest == 0) {
 		// do nothing
@@ -2329,9 +2853,12 @@ string Tool_autocadence::generateCounterpointString(vector<vector<HTp>>& pairing
 		if (b7U != 0) {
 			lowU = getDiatonicInterval(lowest, b7U);
 		}
+		if (b7L != 0) {
+			lowL = getDiatonicInterval(lowest, b7L);
+		}
 	}
 	string dissonant4;
-	if (lowU == 4) {
+	if ((lowU == 4) || (lowL == 4)) {
 		dissonant4 = "D";
 	}
 
@@ -2373,8 +2900,8 @@ string Tool_autocadence::generateCounterpointString(vector<vector<HTp>>& pairing
 	}
 
 	string output = hint;
-	if (hint == "4") {
-		// only marking dissonances for 4
+	// Mark dissonant fourths for both uncrossed (4) and crossed (-4) pairs.
+	if ((hint == "4") || (hint == "-4")) {
 		output += dissonant4;
 	}
 	output += "_";
@@ -2462,144 +2989,254 @@ void Tool_autocadence::fillNotes(vector<HTp>& voice, HTp exinterp) {
 //
 
 void Tool_autocadence::prepareCadenceDefinitions(void) {
-	m_definitions.clear();
-	m_definitions.reserve(200);
+	static const char* const definitions[][4] = {
 
-	// /* Index */                 LowserCVF, UpperCVF, Name, Regex
-	/*   0 */ addCadenceDefinition("", "",		"__1",	R"(^(?:-?\d+|R)_1:-?\d+, 7_1:-2, 6_R:-2, R_)");
-	/*   1 */ addCadenceDefinition("", "",		"__2",	R"(^[^R]_1, 2_1:-2, (?:1|8)_-3:2, 4D?_)");
-	/*   2 */ addCadenceDefinition("", "",		"__3",	R"(^[^R]_1:, 4D_1:-2, 3_1:-2, 2_1:2, 3_-3:2, 6_)");
-	/*   3 */ addCadenceDefinition("", "",		"__4",	R"(^[^R]_1:-?\d+, 7_1:-2, 6_-2:2, 8_)");
-	/*   4 */ addCadenceDefinition("A", "T",	"AT1",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_-2:1, -2_2:1, -3_2:-2, -5_)");
-	/*   5 */ addCadenceDefinition("A", "T",	"AT2",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_-2:1, -2_3:-2, -5_)");
-	/*   6 */ addCadenceDefinition("A", "T",	"AT3",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_1:1, -3_-2:1, -2_3:-2, -5_)");
-	/*   7 */ addCadenceDefinition("A", "T",	"AT4",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_2:-2, -5_)");
-	/*   8 */ addCadenceDefinition("B", "C", 	"BC1",  R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_(?:4|-5):2, (?:1|8)_)");
-	/*   9 */ addCadenceDefinition("B", "C",	"BC2",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]), 4D_1:-2, 3_1:-2, 2_1:2, 3_1:1, 3_-5:2, 8_)");
-	/*  10 */ addCadenceDefinition("B", "C",	"BC3",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_-5:2, 8_)");
-	/*  11 */ addCadenceDefinition("B", "C",	"BC4",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:-2, 2_-5:3, 8_)");
-	/*  12 */ addCadenceDefinition("B", "C",	"BC5",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_-5:2, 8_)");
-	/*  13 */ addCadenceDefinition("B", "C",	"BC6",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:1, 3_-5:2, 8_)");
-	/*  14 */ addCadenceDefinition("B", "C",	"BC7",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_-5:3, 8_)");
-	/*  15 */ addCadenceDefinition("B", "C",	"BC8",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_1:2, 3_-5:2, 8_)");
-	/*  16 */ addCadenceDefinition("B", "C",	"BC9",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_4:2, (?:8|1)_)");
-	/*  17 */ addCadenceDefinition("B", "C",	"BC10",	R"(^3_1:2, 4D_1:-2, 3_(?:4|-5):2, (?:1|8)_)");
-	/*  18 */ addCadenceDefinition("B", "C",	"BC11",	R"(^5_1:-2, 4D_1:-2, 3_(?:4|-5):2, (?:1|8)_)");
-	/*  19 */ addCadenceDefinition("B", "c",	"Bc1",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_(?:4|-5):(?:4|-5), 3_)");
-	/*  20 */ addCadenceDefinition("C", "B",	"CB1",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_-2:1, -2_2:1, -3_2:(?:-5|4), -8_)");
-	/*  21 */ addCadenceDefinition("C", "B",	"CB2",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_-2:1, -2_2:1, -3_2:4, (?:1|-8)_)");
-	/*  22 */ addCadenceDefinition("C", "B",	"CB3",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_-2:1, -2_3:-5, -8_)");
-	/*  23 */ addCadenceDefinition("C", "B",	"CB4",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_-2:1, -2_3:4, (?:1|-8)_)");
-	/*  24 */ addCadenceDefinition("C", "B",	"CB5",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_1:1, -3_-2:1, -2_3:-5, -8_)");
-	/*  25 */ addCadenceDefinition("C", "B",	"CB6",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_1:1, -3_-2:1, -2_3:4, (?:1|-8)_)");
-	/*  26 */ addCadenceDefinition("C", "B",	"CB7",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_2:-5, -8_)");
-	/*  27 */ addCadenceDefinition("C", "B",	"CB8",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_2:4, -8_)");
-	/*  28 */ addCadenceDefinition("C", "B",	"CB9",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_2:4, 1_)");
-	/*  29 */ addCadenceDefinition("C", "Q",	"CQ1",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_2:(?:-5|4), 5_)");
-	/*  30 */ addCadenceDefinition("C", "T",	"CT1",	R"(^(?:-?\d+|R)_1:-?\d+, -7_-2:1, -6_-2:1, -5_2:1, -6_2:-2, -8_)");
-	/*  31 */ addCadenceDefinition("C", "T",	"CT2",	R"(^(?:-?\d+|R)_1:-?\d+, -7_-2:1, -6_-2:1, -5_3:-2, -8_)");
-	/*  32 */ addCadenceDefinition("C", "T",	"CT3",	R"(^(?:-?\d+|R)_1:-?\d+, -7_-2:1, -6_1:1, -6_-2:1, -5_3:-2, -8_)");
-	/*  33 */ addCadenceDefinition("C", "T",	"CT4",	R"(^(?:-?\d+|R)_1:-?\d+, -7_-2:1, -6_2:-2, -8_)");
-	/*  34 */ addCadenceDefinition("C", "T",	"CT5",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_-2:1, 4D?_2:1, 3_2:-2, (?:1|8)_)");
-	/*  35 */ addCadenceDefinition("C", "T",	"CT6",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_-2:1, 4D?_3:-2, (?:1|8)_)");
-	/*  36 */ addCadenceDefinition("C", "T",	"CT7",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_1:1, 3_-2:1, 4D?_2:1, 3_2:-2, (?:1|8)_)");
-	/*  37 */ addCadenceDefinition("C", "T",	"CT8",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_1:1, 3_-2:1, 4D?_3:-2, (?:1|8)_)");
-	/*  38 */ addCadenceDefinition("C", "T",	"CT9",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_1:1, 3_2:-2, (?:1|8)_)");
-	/*  39 */ addCadenceDefinition("C", "T",	"CT10",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_2:-2, (?:1|8)_)");
-	/*  40 */ addCadenceDefinition("C", "T",	"CT11",	R"(^3_2:1, 2_-2:1, 3_2:-2, (?:1|8)_)");
-//	/*  41 */ addCadenceDefinition("C", "T",	"CT11",	R"(^8_-2:1, 2_-2:1, 3_2:-2, (?:1|8)_)");
-	/*  42 */ addCadenceDefinition("C", "t",	"ct1",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_-2:1, 4D?_2:1, 3_1:1, 3_2:2, 3_)");
-	/*  43 */ addCadenceDefinition("C", "t",	"ct2",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_1:1, 3_-2:1, 4D?_2:1, 3_2:2, 3_)");
-	/*  44 */ addCadenceDefinition("C", "t",	"ct3",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_2:2, 3_)");
-	/*  45 */ addCadenceDefinition("C", "t",	"ct4",	R"(^3_2:1, 2_-2:1, 3_2:2, 3_)");
-	/*  46 */ addCadenceDefinition("C", "u",	"Cu1",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_-2:1, -2_2:1, -3_2:-3, -6_)");
-	/*  47 */ addCadenceDefinition("C", "u",	"Cu2",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_-2:1, -2_3:-3, -6_)");
-	/*  48 */ addCadenceDefinition("C", "u",	"Cu3",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_1:1, -3_-2:1, -2_3:-3, -6_)");
-	/*  49 */ addCadenceDefinition("C", "u",	"Cu4",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_2:-3, -6_)");
-	/*  50 */ addCadenceDefinition("C", "z",	"Cz1",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_2:R, R_)");
-	/*  51 */ addCadenceDefinition("L", "C",	"LC1",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_8:2, (?:4|-5)_)");
-	/*  52 */ addCadenceDefinition("L", "C",	"LC2",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:-2, 2_8:3, (?:4|-5)_)");
-	/*  53 */ addCadenceDefinition("L", "C",	"LC3",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_1:2, 3_8:2, (?:4|-5)_)");
-	/*  54 */ addCadenceDefinition("L", "C",	"LC4",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_8:3, (?:4|-5)_)");
-	/*  55 */ addCadenceDefinition("L", "C",	"LC5",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:1, 3_8:2, (?:4|-5)_)");
-	/*  56 */ addCadenceDefinition("L", "C",	"LC6",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_8:2, (?:4|-5)_)");
-	/*  57 */ addCadenceDefinition("P", "C",	"PC1",	R"(^(?:R_1|-?\d+_-?[^1]):1, 2_1:-2, 1_-4:2, 5_)");
-	/*  58 */ addCadenceDefinition("P", "C",	"PC2",	R"(^(?:R_1|-?\d+_-?[^1]):1, 2_1:-2, 8_(?:5|-4):2, 5_)");
-	/*  59 */ addCadenceDefinition("P", "C",	"PC3",	R"(^(?:R_1|-?\d+_-?[^1]):1, 2_1:-2, 8_1:1, 8_(?:5|-4):2, 5_)");
-	/*  60 */ addCadenceDefinition("Q", "C",	"QC1",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_-5:2, 4D?_)");
-	/*  61 */ addCadenceDefinition("Q", "C",	"QC2",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_4:2, -5_)");
-	/*  62 */ addCadenceDefinition("Q", "C",	"QC3",	R"(^(?:R_1|-?\d+_-?[^1]):1, 7_1:-2, 6_(?:-5|4):2, 4D?_)");
-	/*  63 */ addCadenceDefinition("Q", "C",	"QC4",	R"(^(?:R_1|-?\d+_-?[^1]):1, 7_1:-2, 6_1:1, 6_(?:-5|4):2, 4D?_)");
-	/*  64 */ addCadenceDefinition("S", "C",	"SC1",	R"(^(?:R_1|-?\d+_-?[^1]):1, 2_1:-2, (?:1|8)_-3:2, 4D?_)");
-	/*  65 */ addCadenceDefinition("S", "C",	"SC2",	R"(^(?:R_1|-?\d+_-?[^1]):1, 2_1:-2, (?:1|8)_1:1, (?:1|8)_-3:2, 4D?_)");
-	/*  66 */ addCadenceDefinition("T", "A",	"TA1",	R"(^(?:R_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_-2:2, 5_)");
-	/*  67 */ addCadenceDefinition("T", "A",	"TA2",	R"(^(?:R_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_-2:2, 5_)");
-	/*  68 */ addCadenceDefinition("T", "A",	"TA3",	R"(^(?:R_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_-2:2, 5_)");
-	/*  69 */ addCadenceDefinition("T", "A",	"TA4",	R"(^(?:R_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:-2, 2_-2:3, 5_)");
-	/*  70 */ addCadenceDefinition("T", "A",	"TA5",	R"(^(?:R_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_-2:2, 5_)");
-	/*  71 */ addCadenceDefinition("T", "A",	"TA6",	R"(^(?:R_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_1:1, 3_-2:2, 5_)");
-	/*  72 */ addCadenceDefinition("T", "A",	"TA7",	R"(^(?:R_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_-2:3, 5_)");
-	/*  73 */ addCadenceDefinition("T", "C",	"TC1",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:-2, 6_-2:2, 8_)");
-	/*  74 */ addCadenceDefinition("T", "C",	"TC2",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:-2, 6_1:-2, 5_-2:3, 8_)");
-	/*  75 */ addCadenceDefinition("T", "C",	"TC3",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:-2, 6_1:-2, 5_1:2, 6_-2:2, 8_)");
-	/*  76 */ addCadenceDefinition("T", "C",	"TC4",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:-2, 6_1:-2, 5_1:2, 6_1:1, 6_-2:2, 8_)");
-	/*  77 */ addCadenceDefinition("T", "C",	"TC5",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:-2, 6_1:1, 6_-2:2, 8_)");
-	/*  78 */ addCadenceDefinition("T", "C",	"TC6",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:-2, 6_1:1, 6_1:-2, 5_-2:3, 8_)");
-	/*  79 */ addCadenceDefinition("T", "C",	"TC7",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:-2, 6_1:1, 6_1:-2, 5_1:2, 6_-2:2, 8_)");
-	/*  80 */ addCadenceDefinition("T", "C",	"TC8",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:-2, 6_1:2, 7_1:-2, 6_1:-2, 5_-2:3, 8_)");
-	/*  81 */ addCadenceDefinition("T", "C",	"TC9",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:-2, 6_1:2, 7_1:2, 8_1:-3, 6_-2:2, 8_)");
-	/*  82 */ addCadenceDefinition("T", "C",	"TC10",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:-2, 6_1:2, 7_1:2, 8_1:-3, 6_1:-2, 5_-2:3, 8_)");
-	/*  83 */ addCadenceDefinition("T", "C",	"TC11",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:-2, 6_1:3, 8_1:-3, 6_-2:2, 8_)");
-	/*  84 */ addCadenceDefinition("T", "C",	"TC12",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:-3, 5_1:2, 6_-2:2, 8_)");
-	/*  85 */ addCadenceDefinition("T", "C",	"TC13",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:2, 8_1:-3, 6_-2:2, 8_)");
-	/*  86 */ addCadenceDefinition("T", "C",	"TC14",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:2, 8_1:-3, 6_1:-2, 5_-2:3, 8_)");
-	/*  87 */ addCadenceDefinition("T", "C",	"TC15",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7?_1:2, 8_1:-3, 6_1:1, 6_-2:2, 8_)");
-	/*  88 */ addCadenceDefinition("T", "C",	"TC16",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_-2:2, (?:1|-8)_)");
-	/*  89 */ addCadenceDefinition("T", "C",	"TC17",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_1:-2, -4D?_-2:3, (?:1|-8)_)");
-	/*  90 */ addCadenceDefinition("T", "C",	"TC18",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_1:-2, -4D?_1:2, -3_-2:2, (?:1|-8)_)");
-	/*  91 */ addCadenceDefinition("T", "C",	"TC19",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_1:1, -3_1:-2, -4D?_-2:3, (?:1|-8)_)");
-	/*  92 */ addCadenceDefinition("T", "C",	"TC20",	R"(^6_1:2, 7_1:-2, 6_-2:2, 8_)");
-	/*  93 */ addCadenceDefinition("T", "C",	"TC21",	R"(^8_1:-2, 7_1:-2, 6_-2:2, 8_)");
-	/*  94 */ addCadenceDefinition("T", "a",	"Ta1",	R"(^(?:-?\d+_-?[^1]):1, 4D_1:-2, 3_-2:-2, 3_)");
-	/*  95 */ addCadenceDefinition("T", "c",	"Tc1",	R"(^(?:R_1|-?\d+_-?[^1]):1, 7_1:-2, 6_-2:4, 3_)");
-	/*  96 */ addCadenceDefinition("T", "y",	"Ty1",	R"(^(?:R_1|-?\d+_-?[^1]):1, 7_1:-2, 6_-2:R, R_)");
-	/*  97 */ addCadenceDefinition("b", "C",	"bC1",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_2:2, 3_)");
-	/*  98 */ addCadenceDefinition("b", "C",	"bC2",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:-2, 2_2:2, 3_)");
-	/*  99 */ addCadenceDefinition("b", "C",	"bC3",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_2:2, 3_)");
-	/* 100 */ addCadenceDefinition("b", "C",	"bC4",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:1, 3_2:2, 3_)");
-	/* 101 */ addCadenceDefinition("b", "C",	"bC5",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:2, 4D_1:2, 5_1:-3, 3_2:2, 3_)");
-	/* 102 */ addCadenceDefinition("b", "C",	"bC6",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_2:2, 3_)");
-	/* 103 */ addCadenceDefinition("c", "B",	"cB1",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_(?:4|-5):4, -3_)");
-	/* 104 */ addCadenceDefinition("c", "B",	"cB2",	R"(^(?:-?\d+|R)_1:-?\d+, -4D_-2:1, -3_-2:(?:4|-5), (?:-6|3)_)");
-	/* 105 */ addCadenceDefinition("c", "T",	"cT1",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_-2:-2, 3_)");
-	/* 106 */ addCadenceDefinition("c", "T",	"cT2",	R"(^[^R]_1, 7_1:-2, 6_-2:4, 3_)");
-	/* 107 */ addCadenceDefinition("p", "C",	"pC1",	R"(^(?:R_1|-?\d+_-?[^1]):1, 7_1:-2, 6_(?:5|-4):2, 3_)");
-	/* 108 */ addCadenceDefinition("s", "",	"s_1",	R"(^(?:R_1|-?\d+_-?[^1]):1, 2_1:-2, 8_-2:2, 3_)");
-	/* 109 */ addCadenceDefinition("t", "C",	"tC1",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_1:-2, -4D?_1:2, -3_2:2, -3_)");
-	/* 110 */ addCadenceDefinition("t", "C",	"tC2",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_2:2, -3_)");
-	/* 111 */ addCadenceDefinition("t", "C",	"tC3",	R"(^(?:R_1|-?\d+_-?[^1]):1, 7_1:-2, 6_1:1, 6_1:-2, 5_1:2, 6_2:2, 6_)");
-	/* 112 */ addCadenceDefinition("t", "C",	"tC4",	R"(^(?:R_1|-?\d+_-?[^1]):1, 7_1:-2, 6_2:2, 6_)");
-	/* 113 */ addCadenceDefinition("u", "C",	"uC1",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_-2:1, 4D_-2:2, 6_)");
-	/* 114 */ addCadenceDefinition("u", "C",	"uC2",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_-3:2, 6_)");
-	/* 115 */ addCadenceDefinition("u", "C",	"uC3",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:-2, 2_-3:3, 6_)");
-	/* 116 */ addCadenceDefinition("u", "C",	"uC4",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:-2, 2_1:2, 3_-3:2, 6_)");
-	/* 117 */ addCadenceDefinition("u", "C",	"uC5",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:1, 3_-3:2, 6_)");
-	/* 118 */ addCadenceDefinition("u", "C",	"uC6",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_-3:3, 6_)");
-	/* 119 */ addCadenceDefinition("u", "C",	"uC7",	R"(^(?:R_1|4D?_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_1:1, 3_1:-2, 2_1:2, 3_-3:2, 6_)");
-	/* 120 */ addCadenceDefinition("x", "C",	"xC1",	R"(^(?:-?\d+_-?[^1]):1, 4D_1:-2, 3_R:2, R_)");
-	/* 121 */ addCadenceDefinition("x", "C",	"xC2",	R"(^3_1:2, 4D_1:-2, 3_R:2, R_)");
-	/* 122 */ addCadenceDefinition("x", "C",	"xC3",	R"(^5_1:-2, 4D_1:-2, 3_R:2, R_)");
-	/* 123 */ addCadenceDefinition("x", "c",	"xc1",	R"(^(?:R_1|4_1|-?\d+_-?[^1]):1, 4D_1:-2, 3_R:-2, R_)");
-	/* 124 */ addCadenceDefinition("y", "z",	"yz1",	R"(^(?:-?\d+|R)_1:-?\d+, 2_-2:1, 3_R:R, R_)");
-	/* 125 */ addCadenceDefinition("z", "C",	"zC2",	R"(^(?:R_1|7_1|-?\d+_-?[^1]):1, 7_1:-2, 6_1:1, 6_R:2, R_)");
-	/* 126 */ addCadenceDefinition("z", "C",	"zC3",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_1:1, -3_R:2, R_)");
-	/* 127 */ addCadenceDefinition("z", "C",	"zC4",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_R:2, R_)");
-	/* 128 */ addCadenceDefinition("z", "C",	"zC5",	R"(^(?:R_1|-?\d+_-?[^1]):1, 7_1:-2, 6_R:2, R_)");
-	/* 129 */ addCadenceDefinition("z", "c",	"zc1",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_R:-2, R_)");
-	/* 130 */ addCadenceDefinition("z", "c",	"zc2",	R"(^(?:R_1|-?\d+_-?[^1]):1, 7_1:-2, 6_R:-2, R_)");
-	/* 131 */ addCadenceDefinition("z", "y",	"zy1",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_1:1, -3_R:R, R_)");
-	/* 132 */ addCadenceDefinition("z", "y",	"zy2",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_R:R, R_)");
-}
+	// /* Index */                 LowerCVF, UpperCVF, Name, Regex
+	// /*   0 */ {"", "",		"__1",	R"(^7_1:-2, 6_R:-2, R_)"},
+	// /*   1 */ {"", "",		"__2",	R"(^2_1:-2, (?:1|8)_-3:2, 4D?_)"},
+	// /*   2 */ {"", "",		"__3",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_-3:2, 6_)"},
+	// /*   3 */ {"", "",		"__4",	R"(^7_1:-2, 6_-2:2, 8_)"},
+
+	
+	
+	/*   4 */ {"", "",		"__1",	R"(^2_-2:1, 3_-2:1, 4_-3:-3, 4_)"},
+	/* 105 */ {"", "",		"__2",	R"(^2_-2:1, 3_-2:1, 4_5:1, 7_)"},
+	/* 105 */ {"", "",		"__3",	R"(^2_-2:1, 3_-2:1, 4_-2:1, 5_2:1, 4_)"},
+	/* 124 */ {"y", "T",	"yT2",	R"(^2_-2:1, 3_1:-5, -3_R:4, R_)"},  // keep high to disambiguate
+	/*   4 */ {"A", "T",	"AT1",	R"(^-4D_-2:1, -3_-2:1, -2_2:1, -3_2:-2, -5_)"},
+	/*   5 */ {"A", "T",	"AT2",	R"(^-4D_-2:1, -3_-2:1, -2_3:-2, -5_)"},
+	/*   6 */ {"A", "T",	"AT3",	R"(^-4D_-2:1, -3_1:1, -3_-2:1, -2_3:-2, -5_)"},
+	/*   7 */ {"A", "T",	"AT4",	R"(^-4D_-2:1, -3_2:-2, -5_)"},
+	/*   8 */ {"B", "C", 	"BC1",  R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_(?:4|-5):2, (?:1|8)_)"},
+	/*   9 */ {"B", "C",	"BC2",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_1:1, 3_-5:2, 8_)"},
+	/*  10 */ {"B", "C",	"BC3",	R"(^4D_1:-2, 3_(?:4|-5):2, (?:8|1)_)"},
+	/*  11 */ {"B", "C",	"BC4",	R"(^4D_1:-2, 3_1:-2, 2_-5:3, 8_)"},
+	/*  13 */ {"B", "C",	"BC5",	R"(^4D_1:-2, 3_R:1, R_R:-2, 2_1:2, 3_(?:4|-5):2, 8_)"},
+	// /*  13 */ {"B", "C",	"BC5",	R"(^4D_1:-2, 3_R:1, R_R:-2, 2_1:2, 3_4:2, 8_)"},
+	/*  13 */ {"B", "C",	"BC6",	R"(^4D_1:-2, 3_1:1, 3_(?:4|-5):2, 8_)"},
+	/*  14 */ {"B", "C",	"BC7",	R"(^4D_1:-2, 3_1:1, 3_1:-2, 2_-5:3, 8_)"},
+	/*  15 */ {"B", "C",	"BC8",	R"(^4D_1:-2, 3_1:1, 3_1:-2, 2_1:2, 3_-5:2, 8_)"},
+	/*  17 */ {"B", "C",	"BC10",	R"(^4D_1:-2, 3_(?:4|-5):2, (?:1|8)_)"},
+	/*  18 */ {"B", "C",	"BC11",	R"(^4D_1:-2, 3_(?:4|-5):2, (?:1|8)_)"},
+	/*  19 */ {"B", "c",	"Bc1",	R"(^4D_1:-2, 3_(?:4|-5):(?:4|-5), 3_)"},
+	/* 123 */ {"B", "c",	"Bc2",	R"(^4D_1:-2, 3_(?:4|-5):-2, 6_)"},
+	/* 123 */ {"B", "c",	"Bc3",	R"(^4D_1:-2, 3_(?:4|-5):1, 7_)"},
+	/* 123 */ {"B", "c",	"Bc4",	R"(^4D_1:-2, 3_(?:4|-5):-3, 5_)"},
+	/* 123 */ {"B", "c",	"Bc5",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_1:-3, (?:1|8)_1:4, 4_1:-2, 3_1:1, 3_(?:4|-5):-3, 5_)"},
+	/* 123 */ {"B", "c",	"Bc6",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_(?:4|-5):-3, 5_)"},
+	/*  10 */ {"B", "y",	"By1",	R"(^4D_1:-2, 3_(?:4|-5):R, R_)"},
+	/*  20 */ {"C", "B",	"CB1",	R"(^-4D_-2:1, -3_-2:1, -2_2:1, -3_2:(?:-5|4), -8_)"},
+	/*  21 */ {"C", "B",	"CB2",	R"(^-4D_-2:1, -3_-2:1, -2_2:1, -3_2:4, (?:1|-8)_)"},
+	/*  22 */ {"C", "B",	"CB3",	R"(^-4D_-2:1, -3_-2:1, -2_3:-5, -8_)"},
+	/*  23 */ {"C", "B",	"CB4",	R"(^-4D_-2:1, -3_-2:1, -2_3:4, (?:1|-8)_)"},
+	/*  24 */ {"C", "B",	"CB5",	R"(^-4D_-2:1, -3_1:1, -3_-2:1, -2_3:-5, -8_)"},
+	/*  25 */ {"C", "B",	"CB6",	R"(^-4D_-2:1, -3_1:1, -3_-2:1, -2_3:4, (?:1|-8)_)"},
+	/*  26 */ {"C", "B",	"CB7",	R"(^-4D_-2:1, -3_2:-5, -8_)"},
+	/*  27 */ {"C", "B",	"CB8",	R"(^-4D_-2:1, -3_2:4, -8_)"},
+	/*  28 */ {"C", "B",	"CB9",	R"(^-4D_-2:1, -3_2:4, 1_)"},
+	/*  29 */ {"C", "Q",	"CQ1",	R"(^2_-2:1, 3_2:(?:-5|4), 5_)"},
+	/*  29 */ {"C", "Q",	"CQ2",	R"(^2_-2:1, 3_-2:1, 4_2:1, 3_2:(?:-5|4), 5_)"},
+	/*  30 */ {"C", "T",	"CT1",	R"(^-7_-2:1, -6_-2:1, -5_2:1, -6_2:-2, -8_)"},
+	/*  31 */ {"C", "T",	"CT2",	R"(^-7_-2:1, -6_-2:1, -5_3:-2, -8_)"},
+	/*  32 */ {"C", "T",	"CT3",	R"(^-7_-2:1, -6_1:1, -6_-2:1, -5_3:-2, -8_)"},
+	/*  33 */ {"C", "T",	"CT4",	R"(^-7_-2:1, -6_2:-2, -8_)"},
+	/*  41 */ {"C", "T",	"CT5",	R"(^-7_-2:1, -6_1:1, -6_1:1, -6_2:-2, -8_)"},
+	/*  34 */ {"C", "T",	"CT6",	R"(^2_-2:1, 3_-2:1, 4D?_2:1, 3_2:-2, (?:1|8)_)"},
+	/*  35 */ {"C", "T",	"CT7",	R"(^2_-2:1, 3_-2:1, 4D?_3:-2, (?:1|8)_)"},
+	/*  36 */ {"C", "T",	"CT8",	R"(^2_-2:1, 3_1:1, 3_-2:1, 4D?_2:1, 3_2:-2, (?:1|8)_)"},
+	/*  37 */ {"C", "T",	"CT9",	R"(^2_-2:1, 3_1:1, 3_-2:1, 4D?_3:-2, (?:1|8)_)"},
+	/*  38 */ {"C", "T",	"CT10",	R"(^2_-2:1, 3_1:1, 3_2:-2, (?:1|8)_)"},
+	/*  39 */ {"C", "T",	"CT11",	R"(^2_-2:1, 3_2:-2, (?:1|8)_)"},
+	/*  40 */ {"C", "T",	"CT12",	R"(^2_-2:1, 3_2:-2, (?:1|8)_)"},
+	/*  40 */ {"C", "T",	"CT13",	R"(^2_1:1, 2_-2:1, 3_2:-2, (?:1|8)_)"},
+	/*  41 */ {"C", "T",	"CT14",	R"(^-7_-2:1, -6_-2:1, -5_2:1, -6_1:1, -6_2:-2, -8_)"},
+	//	/*  41 */ {"C", "T",	"CT11",	R"(^2_-2:1, 3_2:-2, (?:1|8)_)"},
+	/*  42 */ {"C", "t",	"Ct1",	R"(^2_-2:1, 3_-2:1, 4D?_2:1, 3_1:1, 3_2:2, 3_)"},
+	/*  43 */ {"C", "t",	"Ct2",	R"(^2_-2:1, 3_1:1, 3_-2:1, 4D?_2:1, 3_2:2, 3_)"},
+	/*  44 */ {"C", "t",	"Ct3",	R"(^2_-2:1, 3_2:2, 3_)"},
+	/*  45 */ {"C", "t",	"Ct4",	R"(^2_-2:1, 3_2:2, 3_)"},
+	/*  42 */ {"C", "t",	"Ct5",	R"(^2_-2:1, 3_-2:1, 4D?_2:1, 3_2:2, 3_)"},
+	/*  41 */ {"C", "t",	"Ct6",	R"(^2_-2:1, 3_1:1, 3_1:1, 3_2:2, 3_)"},
+	/*  41 */ {"C", "t",	"Ct7",	R"(^2_-2:1, 3_1:1, 3_2:2, 3_)"},
+	/*  41 */ {"C", "t",	"Ct8",	R"(^2_-2:1, 3_2:-4, -3_)"},
+	/* 105 */ {"C", "t",	"Ct9",	R"(^2_-2:1, 3_-2:2, 5_1:2, 6_2:2, 6_2:-3, 3_)"},
+	/*  44 */ {"C", "t",	"Ct10",	R"(^2_-2:1, 3_1:-2, 2_1:2, 3_2:2, 3_)"},
+	/*  46 */ {"C", "u",	"Cu1",	R"(^-4D_-2:1, -3_-2:1, -2_2:1, -3_2:-3, -6_)"},
+	/*  47 */ {"C", "u",	"Cu2",	R"(^-4D_-2:1, -3_-2:1, -2_3:-3, -6_)"},
+	/*  48 */ {"C", "u",	"Cu3",	R"(^-4D_-2:1, -3_1:1, -3_-2:1, -2_3:-3, -6_)"},
+	/*  49 */ {"C", "u",	"Cu4",	R"(^-4D_-2:1, -3_2:-3, -6_)"},
+	/*  41 */ {"C", "x",	"Cx1",	R"(^2_-2:1, 3_-2:1, 4_2:-5, -3_2:R, R_)"},
+	/*  50 */ {"C", "z",	"Cz1",	R"(^2_-2:1, 3_2:R, R_)"},
+	/*  50 */ {"C", "z",	"Cz2",	R"(^2_-2:1, 3_1:1, 3_2:R, R_)"},
+	/*  51 */ {"L", "C",	"LC1",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_8:2, (?:4|-5)_)"},
+	/*  52 */ {"L", "C",	"LC2",	R"(^4D_1:-2, 3_1:-2, 2_8:3, (?:4|-5)_)"},
+	/*  53 */ {"L", "C",	"LC3",	R"(^4D_1:-2, 3_1:1, 3_1:-2, 2_1:2, 3_8:2, (?:4|-5)_)"},
+	/*  54 */ {"L", "C",	"LC4",	R"(^4D_1:-2, 3_1:1, 3_1:-2, 2_8:3, (?:4|-5)_)"},
+	/*  55 */ {"L", "C",	"LC5",	R"(^4D_1:-2, 3_1:1, 3_8:2, (?:4|-5)_)"},
+	/*  56 */ {"L", "C",	"LC6",	R"(^4D_1:-2, 3_8:2, (?:4|-5)_)"},
+	/*  57 */ {"P", "C",	"PC1",	R"(^2_1:-2, 1_-4:2, 5_)"},
+	/*  58 */ {"P", "C",	"PC2",	R"(^2_1:-2, 8_(?:5|-4):2, 5_)"},
+	/*  59 */ {"P", "C",	"PC3",	R"(^2_1:-2, 8_1:1, 8_(?:5|-4):2, 5_)"},
+	/*  59 */ {"P", "c",	"Pc1",	R"(^2_1:-2, 8_(?:5|-4):1, 4D_)"},
+	/*  59 */ {"P", "c",	"Pc2",	R"(^2_1:-2, 8_1:1, 8_(?:5|-4):1, 4D_)"},
+	/*  60 */ {"Q", "C",	"QC1",	R"(^-2_1:-2, -3_-5:2, 4D?_)"},
+	/*  61 */ {"Q", "C",	"QC2",	R"(^-2_1:-2, -3_4:2, -5_)"},
+	/*  62 */ {"Q", "C",	"QC3",	R"(^7_1:-2, 6_(?:-5|4):2, 4D?_)"},
+	/*  63 */ {"Q", "C",	"QC4",	R"(^7_1:-2, 6_1:1, 6_(?:-5|4):2, 4D?_)"},
+	/*  62 */ {"Q", "c",	"QC5",	R"(^7_1:-2, 6_(?:-5|4):4, 6_)"},
+	/* 133 */ {"Q", "y",	"Qy1",	R"(^7_1:-2, 6_(?:-5|4):R, R_)"},
+	/*  64 */ {"S", "C",	"SC1",	R"(^2_1:-2, (?:1|8)_-3:2, 4D?_)"},
+	/*  65 */ {"S", "C",	"SC2",	R"(^2_1:-2, (?:1|8)_1:1, (?:1|8)_-3:2, 4D?_)"},
+	/*  66 */ {"T", "A",	"TA1",	R"(^4D_1:-2, 3_-2:2, 5_)"},
+	/*  69 */ {"T", "A",	"TA2",	R"(^4D_1:-2, 3_1:-2, 2_-2:3, 5_)"},
+	/*  70 */ {"T", "A",	"TA3",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_-2:2, 5_)"},
+	/*  71 */ {"T", "A",	"TA4",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_1:1, 3_-2:2, 5_)"},
+	/*  72 */ {"T", "A",	"TA5",	R"(^4D_1:-2, 3_1:1, 3_1:-2, 2_-2:3, 5_)"},
+	/*  73 */ {"T", "C",	"TC1",	R"(^7_1:-2, 6_-2:2, 8_)"},
+	/*  74 */ {"T", "C",	"TC2",	R"(^7_1:-2, 6_1:-2, 5_-2:3, 8_)"},
+	/*  75 */ {"T", "C",	"TC3",	R"(^7_1:-2, 6_1:-2, 5_1:2, 6_-2:2, 8_)"},
+	/*  76 */ {"T", "C",	"TC4",	R"(^7_1:-2, 6_1:-2, 5_1:2, 6_1:1, 6_-2:2, 8_)"},
+	/*  77 */ {"T", "C",	"TC5",	R"(^7_1:-2, 6_1:1, 6_-2:2, 8_)"},
+	/*  78 */ {"T", "C",	"TC6",	R"(^7_1:-2, 6_1:1, 6_1:-2, 5_-2:3, 8_)"},
+	/*  79 */ {"T", "C",	"TC7",	R"(^7_1:-2, 6_1:1, 6_1:-2, 5_1:2, 6_-2:2, 8_)"},
+	/*  80 */ {"T", "C",	"TC8",	R"(^7_1:-2, 6_1:2, 7_1:-2, 6_1:-2, 5_-2:3, 8_)"},
+	/*  81 */ {"T", "C",	"TC9",	R"(^7_1:-2, 6_1:2, 7_1:2, 8_1:-3, 6_-2:2, 8_)"},
+	/*  82 */ {"T", "C",	"TC10",	R"(^7_1:-2, 6_1:2, 7_1:2, 8_1:-3, 6_1:-2, 5_-2:3, 8_)"},
+	/*  83 */ {"T", "C",	"TC11",	R"(^7_1:-2, 6_1:3, 8_1:-3, 6_-2:2, 8_)"},
+	/*  84 */ {"T", "C",	"TC12",	R"(^7_1:-3, 5_1:2, 6_-2:2, 8_)"},
+	/*  85 */ {"T", "C",	"TC13",	R"(^7_1:2, 8_1:-3, 6_-2:2, 8_)"},
+	/*  86 */ {"T", "C",	"TC14",	R"(^7_1:2, 8_1:-3, 6_1:-2, 5_-2:3, 8_)"},
+	/*  87 */ {"T", "C",	"TC15",	R"(^7_1:2, 8_1:-3, 6_1:1, 6_-2:2, 8_)"},
+	/*  88 */ {"T", "C",	"TC16",	R"(^-2_1:-2, -3_-2:2, (?:1|-8)_)"},
+	/*  89 */ {"T", "C",	"TC17",	R"(^-2_1:-2, -3_1:-2, -4D?_-2:3, (?:1|-8)_)"},
+	/*  90 */ {"T", "C",	"TC18",	R"(^-2_1:-2, -3_1:-2, -4D?_1:2, -3_-2:2, (?:1|-8)_)"},
+	/*  91 */ {"T", "C",	"TC19",	R"(^-2_1:-2, -3_1:1, -3_1:-2, -4D?_-2:3, (?:1|-8)_)"},
+	/*  88 */ {"T", "C",	"TC20",	R"(^-2_1:-2, -3_1:1, -3_-2:2, (?:1|-8)_)"},
+	/*  92 */ {"T", "C",	"TC21",	R"(^7_1:-2, 6_-2:2, 8_)"},
+	/*  93 */ {"T", "C",	"TC22",	R"(^7_1:-2, 6_-2:2, 8_)"},
+	/*  95 */ {"T", "C",	"TC23",	R"(^7_1:-2, 6_-2:-2, 6_2:2, 6_-2:2, 8_)"},
+	/*  94 */ {"T", "a",	"Ta1",	R"(^4D_1:-2, 3_-2:-2, 3_)"},
+	/*  94 */ {"T", "a",	"Ta2",	R"(^4D_1:-2, 3_-2:1, 4D_)"},
+	/*  94 */ {"", "",		"_Ta3",	R"(^4D_1:-2, 3_1:1, 3_-2:-2, 3_-2:-2, 3_-2:2, 5_)"},
+	/*  94 */ {"T", "a",	"Ta3",	R"(^4D_1:-2, 3_1:1, 3_-2:-2, 3_)"},
+	/* 111 */ {"T", "a",	"Ta4",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_-2:-2, 3_)"},
+	/* 102 */ {"T", "a",	"Ta5",	R"(^4D_1:-2, 3_1:1, 3_-2:1, 4D_)"},
+	/* 102 */ {"T", "a",	"Ta6",	R"(^4D_1:1, 4_1:-2, 3_-2:-2, 3_)"},
+	/*  95 */ {"T", "c",	"Tc1",	R"(^7_1:-2, 6_-2:4, 3_)"},
+	/*  95 */ {"T", "c",	"Tc2",	R"(^7_1:-2, 6_-2:1, 7_-2:1, 8_2:1, 7_)"},
+	/*  95 */ {"T", "c",	"Tc3",	R"(^7_1:-2, 6_-2:-2, 6_-2:-2, 6_2:2, 6_)"},
+	/*  95 */ {"T", "c",	"Tc4",	R"(^7_1:-2, 6_-2:-2, 6_)"},
+	/*  95 */ {"T", "c",	"Tc5",	R"(^-2_1:-2, -3_1:1, -3_-2:1, -2_)"},
+	/*  95 */ {"T", "c",	"Tc6",	R"(^-2_1:1, -2_1:-2, -3_-2:-2, -3_)"},
+	/*  95 */ {"T", "c",	"Tc7",	R"(^7_1:-2, 6_1:-2, 5_1:-2, 4_1:-2, 3_-2:2, 5_)"},
+	/*  95 */ {"T", "c",	"Tc8",	R"(^7_1:-2, 6_1:1, 6_-2:1, 7_-2:1, 8_2:1, 7_)"},
+	/*  95 */ {"T", "c",	"Tc9",	R"(^7_1:-2, 6_1:1, 6_-2:1, 7_)"},
+	/*  95 */ {"T", "c",	"Tc10",	R"(^-2_1:-2, -3_-2:1, -2_-2:1, 1_2:1, -2_)"},
+	/*  95 */ {"T", "c",	"Tc11",	R"(^7_1:-2, 6_1:1, 6_-2:-2, 6_)"},
+	/* 111 */ {"T", "c",	"Tc12",	R"(^7_1:-2, 6_2:1, 5_-3:1, 7_)"},
+	/*  95 */ {"T", "c",	"Tc13",	R"(^-2_1:-2, -3_-2:1, -2_)"},
+	/*  95 */ {"T", "c",	"Tc14",	R"(^7_1:-2, 6_-2:1, 7_)"},
+	/*  96 */ {"T", "y",	"Ty1",	R"(^7_1:-2, 6_-2:R, R_)"},
+	/*  97 */ {"b", "C",	"bC1",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_2:2, 3_)"},
+	/*  98 */ {"b", "C",	"bC2",	R"(^4D_1:-2, 3_1:-2, 2_2:2, 3_)"},
+	/*  99 */ {"b", "C",	"bC3",	R"(^4D_1:-2, 3_1:1, 3_1:-2, 2_2:2, 3_)"},
+	/* 100 */ {"b", "C",	"bC4",	R"(^4D_1:-2, 3_1:1, 3_2:2, 3_)"},
+	/* 101 */ {"b", "C",	"bC5",	R"(^4D_1:-2, 3_1:2, 4D_1:2, 5_1:-3, 3_2:2, 3_)"},
+	/* 102 */ {"b", "C",	"bC6",	R"(^4D_1:-2, 3_2:2, 3_)"},
+	/* 102 */ {"b", "c",	"bc1",	R"(^4D_1:-2, 3_2:-2, (?:8|1)_)"},
+	/* 102 */ {"b", "c",	"bc3",	R"(^4D_1:-2, 3_-3:1, 5_2:1, 4D_)"},
+	/* 102 */ {"b", "c",	"bc4",	R"(^4D_1:-2, 3_-4:3, 8_2:1, 7_)"},
+	/* 102 */ {"b", "y",	"by1",	R"(^4D_1:-2, 3_2:R, R_)"},
+	/* 102 */ {"b", "y",	"by2",	R"(^4D_1:-2, 3_1:1, 3_2:R, R_)"},
+	/* 103 */ {"c", "B",	"cB1",	R"(^-4D_-2:1, -3_(?:4|-5):4, -3_)"},
+	/* 104 */ {"c", "B",	"cB2",	R"(^-4D_-2:1, -3_-2:(?:4|-5), (?:-6|3)_)"},
+	/* 104 */ {"c", "Q",	"cQ1",	R"(^2_-2:1, 3_1:-5, -3_-2:4, 3_)"},
+	/* 104 */ {"c", "Q",	"cQ2",	R"(^2_-2:1, 3_1:-5, -3_)"},
+	/* 105 */ {"c", "T",	"cT1",	R"(^2_-2:1, 3_-2:-2, 3_)"},
+	/* 106 */ {"c", "T",	"cT2",	R"(^7_1:-2, 6_-2:4, 3_)"},
+	/* 105 */ {"c", "T",	"cT3",	R"(^2_-2:1, 3_1:-2, 2_1:-2, 1_1:2, 2_)"},
+	/* 105 */ {"c", "T",	"cT4",	R"(^2_1:1, 2_-2:1, 3_1:1, 3_1:-2, 2_)"},
+	/* 105 */ {"c", "T",	"cT5",	R"(^2_-2:1, 3_1:1, 3_1:-2, 2_1:-2, 1_-2:2, 3_)"},
+	/* 105 */ {"c", "T",	"cT6",	R"(^2_-2:1, 3_1:1, 3_-2:-2, 3_)"},
+	/* 105 */ {"c", "T",	"cT7",	R"(^2_-2:1, 3_4:-2, -3_)"},
+	/* 105 */ {"c", "T",	"cT8",	R"(^2_-2:1, 3_1:-2, 2_)"},
+	/* 105 */ {"c", "T",	"cT9",	R"(^2_-2:1, 3_1:1, 3_1:-2, 2_)"},
+	/* 123 */ {"c", "T",	"cT10",	R"(^2_-2:1, 3_-2:1, 4_2:1, 3_-3:-2, 4_)"},
+	/* 105 */ {"c", "T",	"cT11",	R"(^2_-2:1, 3_-2:1, 4_-2:1, 5_2:-2, 3_)"},
+	/* 105 */ {"c", "t",	"ct1",	R"(^2_-2:1, 3_-2:1, 4_(?!2:1))"},  // needs negative look-ahead for disambiguation
+	/* 105 */ {"c", "t",	"ct2",	R"(^2_-2:1, 3_-2:2, 5_)"},
+	/* 105 */ {"c", "t",	"ct3",	R"(^2_-2:1, 3_1:2, 4_-2:2, 6_)"},
+	/* 105 */ {"c", "t",	"ct4",	R"(^2_-2:1, 3_3:3, 3_1:-2, 2_)"},
+	/* 105 */ {"c", "t",	"ct5",	R"(^2_-2:1, 3_1:2, 4D_)"},
+	/*  41 */ {"c", "t",	"ct6",	R"(^2_-2:1, 3_1:1, 3_1:-2, 2_1:-2, 1_1:2, 2_)"},
+	/* 105 */ {"c", "t",	"ct7",	R"(^2_-2:1, 3_4:1, -2_)"},
+	/* 169 */ {"c", "t",	"ct8",	R"(^2_-2:1, 3_-2:3, 6_)"},
+	/*  41 */ {"c", "u",	"cu1",	R"(^-4_-2:1, -3_1:-3, -5_)"},
+	/*  41 */ {"c", "z",	"cz1",	R"(^2_-2:1, 3_4:R, R_)"},
+	/* 107 */ {"p", "C",	"pC1",	R"(^7_1:-2, 6_(?:5|-4):2, 3_)"},  // TODO: should "p" exist?
+	// /* 108 */ {"s", "",		"s_1",	R"(^2_1:-2, 8_-2:2, 3_)"},
+	/* 109 */ {"t", "C",	"tC1",	R"(^-2_1:-2, -3_1:-2, -4D?_1:2, -3_2:2, -3_)"},
+	/* 110 */ {"t", "C",	"tC2",	R"(^-2_1:-2, -3_2:2, -3_)"},
+	/* 111 */ {"t", "C",	"tC3",	R"(^7_1:-2, 6_1:1, 6_1:-2, 5_1:2, 6_2:2, 6_)"},
+	/* 112 */ {"t", "C",	"tC4",	R"(^7_1:-2, 6_2:2, 6_)"},
+	/* 110 */ {"t", "C",	"tC5",	R"(^-2_1:-2, -3_1:1, -3_2:2, -3_)"},
+	/* 112 */ {"t", "C",	"tC6",	R"(^7_1:-2, 6_1:-2, 5_1:2, 6_2:2, 6_)"},
+	/* 111 */ {"t", "c",	"tc1",	R"(^7_1:-2, 6_-3:1, 8_2:1, 7_)"},
+	/* 111 */ {"t", "c",	"tc2",	R"(^7_1:-2, 6_3:1, 4D_)"},
+	/* 111 */ {"t", "c",	"tc3",	R"(^7_1:-2, 6_1:1, 6_2:1, 5_2:-2, 3_)"},
+	/* 111 */ {"t", "c",	"tc4",	R"(^7_1:-2, 6_2:1, 5_2:1, 4D_)"},
+	/* 111 */ {"t", "y",	"ty5",	R"(^7_1:-2, 6_2:1, 5_2:R, R_)"},
+	/* 111 */ {"t", "c",	"tc6",	R"(^7_2:-2, 5_-3:1, 7_)"},
+	/* 111 */ {"t", "c",	"tc7",	R"(^7_1:-2, 6_2:1, 5_2:-2, 3_)"},  // TODO: reconsider disambiguation -> Trm0059c m. 40
+	/* 111 */ {"t", "c",	"tc8",	R"(^7_1:-2, 6_2:1, 5_)"},
+	/* 111 */ {"t", "c",	"tc9",	R"(^7_1:-2, 6_1:1, 6_2:1, 5_2:-2, 3_)"},
+	/* 111 */ {"t", "c",	"tc9",	R"(^7_1:-2, 6_1:1, 6_2:1, 5_2:1, 4D_)"},
+	/* 113 */ {"u", "C",	"uC1",	R"(^4D_1:-2, 3_-2:1, 4D_-2:2, 6_)"},
+	/* 114 */ {"u", "C",	"uC2",	R"(^4D_1:-2, 3_-3:2, 6_)"},
+	/* 115 */ {"u", "C",	"uC3",	R"(^4D_1:-2, 3_1:-2, 2_-3:3, 6_)"},
+	/* 116 */ {"u", "C",	"uC4",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_-3:2, 6_)"},
+	/* 117 */ {"u", "C",	"uC5",	R"(^4D_1:-2, 3_1:1, 3_-3:2, 6_)"},
+	/* 118 */ {"u", "C",	"uC6",	R"(^4D_1:-2, 3_1:1, 3_1:-2, 2_-3:3, 6_)"},
+	/* 119 */ {"u", "C",	"uC7",	R"(^4D_1:-2, 3_1:1, 3_1:-2, 2_1:2, 3_-3:2, 6_)"},
+	/* 119 */ {"u", "c",	"uc1",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_-2:1, 4_-2:1, 5_)"},
+	/* 119 */ {"u", "c",	"uc2",	R"(^4D_1:-2, 3_-3:1, 5_)"},
+	/* 117 */ {"u", "y",	"uy1",	R"(^4D_1:-2, 3_-2:1, 4_-2:R, R_)"},
+	/* 117 */ {"u", "y",	"uy2",	R"(^4D_1:-2, 3_-3:R, R_)"},
+	/* 120 */ {"x", "C",	"xC1",	R"(^4D_1:-2, 3_R:2, R_)"},
+	/* 121 */ {"x", "C",	"xC2",	R"(^4D_1:-2, 3_R:2, R_)"},
+	/* 122 */ {"x", "C",	"xC3",	R"(^4D_1:-2, 3_R:2, R_)"},
+	/* 120 */ {"x", "C",	"xC4",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_R:2, R_)"},
+	/* 120 */ {"x", "C",	"xC5",	R"(^4D_1:-2, 3_1:1, 3_R:2, R_)"},
+	/* 123 */ {"x", "c",	"xc1",	R"(^4D_1:-2, 3_R:-2, R_)"},
+	/* 123 */ {"x", "c",	"xc2",	R"(^4D_1:-2, 3_R:4, R_)"},
+	/* 123 */ {"x", "c",	"xc3",	R"(^4D_1:-2, 3_R:1, R_)"},
+	/* 123 */ {"x", "c",	"xc4",	R"(^4D_1:-2, 3_1:-2, 2_1:2, 3_R:-3, R_)"},
+	/* 123 */ {"x", "y",	"xy1",	R"(^4D_1:-2, 3_R:R, R_)"},
+	/* 123 */ {"x", "y",	"xy2",	R"(^4D_R:-2, R_)"},
+	/* 124 */ {"y", "T",	"yT1",	R"(^2_-2:1, 3_R:-2, R_)"},
+	/* 124 */ {"y", "z",	"yz1",	R"(^2_-2:1, 3_R:R, R_)"},
+	/* 124 */ {"y", "Q",	"yQ1",	R"(^2_-2:1, 3_R:-5, R_)"},
+	/* 125 */ {"z", "C",	"zC1",	R"(^7_1:-2, 6_1:-2, 5_1:2, 6_R:2, R_)"},
+	/* 125 */ {"z", "C",	"zC2",	R"(^7_1:-2, 6_1:1, 6_R:2, R_)"},
+	/* 126 */ {"z", "C",	"zC3",	R"(^-2_1:-2, -3_1:1, -3_R:2, R_)"},
+	/* 127 */ {"z", "C",	"zC4",	R"(^-2_1:-2, -3_R:2, R_)"},
+	/* 128 */ {"z", "C",	"zC5",	R"(^7_1:-2, 6_R:2, R_)"},
+	/* 125 */ {"z", "C",	"zC6",	R"(^-2_1:-2, -3_1:-2, -4_1:2, -3_R:2, R_)"},
+	/* 125 */ {"z", "C",	"zC7",	R"(^-2_1:-2, -3_1:-2, -4_R:3, R_)"},
+	/* 129 */ {"z", "c",	"zc1",	R"(^-2_1:-2, -3_R:-2, R_)"},
+	/* 130 */ {"z", "c",	"zc2",	R"(^7_1:-2, 6_R:-2, R_)"},
+	/* 131 */ {"z", "y",	"zy1",	R"(^-2_1:-2, -3_1:1, -3_R:R, R_)"},
+	/* 132 */ {"z", "y",	"zy2",	R"(^-2_1:-2, -3_R:R, R_)"},
+	/* 132 */ {"z", "y",	"zy3",	R"(^7_1:-2, 6_R:R, R_)"},
+	/* 133 */ {"t", "y",	"ty1",	R"(^7_1:-2, 6_(?!-2:)-?\d+:R, R_)"},
+	/* 133 */ {"t", "y",	"ty2",	R"(^-2_1:-2, -3_2:R, R_)"},
+	};
+
+	m_definitions.reserve(std::size(definitions));
+	for (const auto& def : definitions) {
+		addCadenceDefinition(def[0], def[1], def[2], def[3]);
+	}
+}   
 
 
 
@@ -2610,80 +3247,199 @@ void Tool_autocadence::prepareCadenceDefinitions(void) {
 //
 
 void Tool_autocadence::prepareCadenceLabels(void) {
-	m_cadenceLabels.emplace("Ab",   "Altizans Only");
-	m_cadenceLabels.emplace("AB",   "Reinterpreted");
-	m_cadenceLabels.emplace("Abx",  "Altizans Only");
-	m_cadenceLabels.emplace("ABx",  "Reinterpreted");
-	m_cadenceLabels.emplace("Abxz", "Altizans Only");
-	m_cadenceLabels.emplace("ABxz", "Reinterpreted");
-	m_cadenceLabels.emplace("Abz",  "Altizans Only");
-	m_cadenceLabels.emplace("ABz",  "Reinterpreted");
-	m_cadenceLabels.emplace("ACt",  "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("ACT",  "Clausula Vera");// Phrygian
-	m_cadenceLabels.emplace("ACTt", "Double Leading Tone");
-	m_cadenceLabels.emplace("ACTtz","Double Leading Tone");
-	m_cadenceLabels.emplace("ACtz", "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("ACz",  "Abandoned Double Leading Tone");
-	m_cadenceLabels.emplace("AT",   "Altizans");// Phrygian
-	m_cadenceLabels.emplace("ATx",  "Altizans Only");
-	m_cadenceLabels.emplace("ATxy", "Altizans Only");
-	m_cadenceLabels.emplace("ATxyz","Altizans Only");
-	m_cadenceLabels.emplace("ATxz", "Altizans Only");
-	m_cadenceLabels.emplace("ATy",  "Altizans");// Phrygian
-	m_cadenceLabels.emplace("ATyz", "Altizans");// Phrygian
-	m_cadenceLabels.emplace("ATz",  "Altizans");// Phrygian
-	m_cadenceLabels.emplace("BC",   "Authentic");
-	m_cadenceLabels.emplace("BCT",  "Authentic");
-	m_cadenceLabels.emplace("BCTu", "Authentic");
-	m_cadenceLabels.emplace("CTb",  "Authentic");
-	m_cadenceLabels.emplace("BCt",  "Authentic");
-	m_cadenceLabels.emplace("BCt",  "Evaded Authentic");
-	m_cadenceLabels.emplace("Bc",   "Evaded Authentic");
-	m_cadenceLabels.emplace("BCu",  "Authentic");
-	m_cadenceLabels.emplace("BCuz", "Authentic");
-	m_cadenceLabels.emplace("BCx",  "Authentic");
-	m_cadenceLabels.emplace("BCxz", "Authentic");
-	m_cadenceLabels.emplace("BCz",  "Authentic");
-	m_cadenceLabels.emplace("Bcz",  "Evaded Authentic");
-	m_cadenceLabels.emplace("C",    "Quince");
-	m_cadenceLabels.emplace("Cb",   "Evaded Authentic");
-	m_cadenceLabels.emplace("CLT",  "Leaping Contratenor");
-	m_cadenceLabels.emplace("CLTz", "Leaping Contratenor");
-	m_cadenceLabels.emplace("Cp",   "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("Cpt",  "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("CPT",  "Phrygian");// Phrygian
-	m_cadenceLabels.emplace("CPTz", "Phrygian");// Phrygian
-	m_cadenceLabels.emplace("Ct",   "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("CT",   "Clausula Vera");// Phrygian
-	m_cadenceLabels.emplace("CTa",  "Clausula Vera");
-	m_cadenceLabels.emplace("CTaz", "Clausula Vera");
-	m_cadenceLabels.emplace("CTp",  "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("CTpt", "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("CTu",  "Clausula Vera");
-	m_cadenceLabels.emplace("CTt",  "Clausula Vera");
-	m_cadenceLabels.emplace("Ctu",  "Evaded Authentic");
-	m_cadenceLabels.emplace("CTux", "Evaded Authentic");
-	m_cadenceLabels.emplace("CTx",  "Clausula Vera");
-	m_cadenceLabels.emplace("Ctxz", "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("Ctz",  "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("CTz",  "Clausula Vera");// Phrygian
-	m_cadenceLabels.emplace("Cu",   "Evaded Authentic");
-	m_cadenceLabels.emplace("cx",   "Abandoned Authentic");
-	m_cadenceLabels.emplace("Cx",   "Abandoned Authentic");
-	m_cadenceLabels.emplace("cxz",  "Abandoned Authentic");
-	m_cadenceLabels.emplace("Cxz",  "Abandoned Clausula Vera");
-	m_cadenceLabels.emplace("Cz",   "Abandoned Clausula Vera");
-	m_cadenceLabels.emplace("cz",   "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("Ta",   "Evaded Altizans Only");
-	m_cadenceLabels.emplace("Taz",  "Evaded Altizans Only");
-	m_cadenceLabels.emplace("Tc",   "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("Tcx",  "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("Tcxz", "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("Tcz",  "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("Ty",   "Evaded Clausula Vera");
-	m_cadenceLabels.emplace("xy",   "Abandoned Authentic");
-	m_cadenceLabels.emplace("xyz",  "Abandoned Authentic");
-	m_cadenceLabels.emplace("yz",   "Abandoned Clausula Vera");
+	static const char* const labels[][2] = {
+	{"Ab",   "Altizans Only"},
+	{"AB",   "Reinterpreted"},
+	{"Abx",  "Altizans Only"},
+	{"ABx",  "Reinterpreted"},
+	{"Abxz", "Altizans Only"},
+	{"ABxz", "Reinterpreted"},
+	{"Abz",  "Altizans Only"},
+	{"ABz",  "Reinterpreted"},
+	{"ABCT", "Double Leading Tone"},  // TODO: consider "Dual/Double/Twin Patient"
+	{"ACT",  "Double Leading Tone"},
+	{"ACQT", "Double Leading Tone"},
+	{"ACTt", "Double Leading Tone"},
+	{"ACTtz","Double Leading Tone"},
+	{"ACt",  "Evaded Double Leading Tone"},
+	{"ACtz", "Evaded Double Leading Tone"},
+	{"Tac",  "Evaded Double Leading Tone"},
+	{"ACz",  "Abandoned Double Leading Tone"},
+	{"ABT",  "Altizans Only"},
+	{"APT",  "Altizans Only"},
+	{"AT",   "Altizans Only"},
+	{"ATb",  "Altizans Only"},
+	{"ATx",  "Altizans Only"},
+	{"ATxy", "Altizans Only"},
+	{"ATxyz","Altizans Only"},
+	{"ATxz", "Altizans Only"},
+	{"ATy",  "Altizans Only"},
+	{"ATyz", "Altizans Only"},
+	{"ATz",  "Altizans Only"},
+	{"ATbz", "Altizans Only"},
+	{"ABCTz","Authentic"},
+	{"BC",   "Authentic"},
+	{"BCT",  "Authentic"},
+	{"BCTt", "Authentic"},
+	{"BCTx", "Authentic"},
+	{"BCTtu","Authentic"},
+	{"BCTtx","Authentic"},
+	{"BCTu", "Authentic"},
+	{"BCTz", "Authentic"},
+	{"BCt",  "Authentic"},
+	{"BCtu", "Authentic"},
+	{"BCtz", "Authentic"},
+	{"BCu",  "Authentic"},
+	{"BCuz", "Authentic"},
+	{"BCx",  "Authentic"},
+	{"BCxz", "Authentic"},
+	{"BCz",  "Authentic"},
+	{"BCQ",  "Authentic"},
+	{"BCQt", "Authentic"},
+	{"BCQu", "Authentic"},
+	{"BCb",  "Evaded Authentic"},
+	{"BCTb", "Evaded Authentic"},
+	{"BTc",  "Evaded Authentic"},
+	{"BTcu", "Evaded Authentic"},
+	{"Bbc",  "Evaded Authentic"},
+	{"Bc",   "Evaded Authentic"},
+	{"Bct",  "Evaded Authentic"},
+	{"Bcu",  "Evaded Authentic"},
+	{"Bcx",  "Evaded Authentic"},
+	{"Bcz",  "Evaded Authentic"},
+	{"Cbu",  "Evaded Authentic"},
+	{"Cbux", "Evaded Authentic"},
+	{"Cbx",  "Evaded Authentic"},
+	{"Cbz",  "Evaded Authentic"},
+	{"CQu",  "Evaded Authentic"},
+	{"CQux", "Evaded Authentic"},
+	{"CTb",  "Evaded Authentic"},
+	{"CTbu", "Evaded Authentic"},
+	{"CTbux", "Evaded Authentic"},
+	{"CTbx", "Evaded Authentic"},
+	{"Cux",  "Evaded Authentic"},
+	{"Cuz",  "Evaded Authentic"},
+	{"bc",   "Evaded Authentic"},
+	{"bcz",  "Evaded Authentic"},
+	{"bct",  "Evaded Authentic"},
+	{"bcu",  "Evaded Authentic"},
+	{"Cb",   "Evaded Authentic"},
+	{"Tbc",  "Evaded Authentic"},
+	{"Tcu",  "Evaded Authentic"},
+	{"cu",   "Evaded Authentic"},
+	{"ctu",  "Evaded Authentic"},
+	{"cux",  "Evaded Authentic"},
+	{"Ctu",  "Evaded Authentic"},
+	{"CTux", "Evaded Authentic"},
+	{"Cu",   "Evaded Authentic"},
+	{"PTbc", "Evaded Authentic"},
+	{"BQTat", "Inverted Authentic"},
+	{"CQ",   "Inverted Authentic"},
+	{"CQT",  "Inverted Authentic"},
+	{"CQTa", "Inverted Authentic"},
+	{"CQTu", "Inverted Authentic"},
+	{"CQTt", "Inverted Authentic"},
+	{"CQt",  "Inverted Authentic"},
+	{"CQtx", "Inverted Authentic"},
+	{"CQx",  "Inverted Authentic"},
+	{"CQxz", "Inverted Authentic"},
+	{"CQz",  "Inverted Authentic"},
+	{"BTa",  "Evaded Inverted Authentic"},
+	{"Qc",   "Evaded Inverted Authentic"},
+	{"Qcu",  "Evaded Inverted Authentic"},
+	{"QTy",  "Abandoned Inverted Authentic"},
+	{"Qy",   "Abandoned Inverted Authentic"},
+	{"Qyz",  "Abandoned Inverted Authentic"},
+	{"Qty",  "Abandoned Inverted Authentic"},
+	{"C",    "Quince"},
+	{"CL",   "Leaping Contratenor"},
+	{"CLT",  "Leaping Contratenor"},
+	{"CLTz", "Leaping Contratenor"},
+	{"CP",   "Incomplete 9-8-5"},
+	{"Pc",   ""},
+	{"CPT",  "9-8-5"},
+	{"CPTz", "9-8-5"},
+	{"CPt",  "Evaded 9-8-5"},
+	{"PTc",  "Evaded 9-8-5"},
+	{"PTcx", "Evaded 9-8-5"},
+	{"Pct",  "Evaded 9-8-5"},
+	{"CT",   "Clausula Vera"},
+	{"CTa",  "Clausula Vera"},
+	{"CTaz", "Clausula Vera"},
+	{"CTc",  "Clausula Vera"},
+	{"CTtz", "Clausula Vera"},
+	{"CTu",  "Clausula Vera"},
+	{"CTt",  "Clausula Vera"},
+	{"CTx",  "Clausula Vera"},
+	{"CTz",  "Clausula Vera"},
+	{"Ctxz", "Evaded Clausula Vera"},
+	{"Ctz",  "Evaded Clausula Vera"},
+	{"Cp",   "Evaded Clausula Vera"},
+	{"Cpt",  "Evaded Clausula Vera"},
+	{"Ct",   "Evaded Clausula Vera"},
+	{"CTp",  "Evaded Clausula Vera"},  // TODO: check this, perhaps it shouldn't be evaded
+	{"CTpt", "Evaded Clausula Vera"},  // TODO: check this, perhaps it shouldn't be evaded
+	{"ctz",  "Evaded Clausula Vera"},
+	{"bxy",  "Abandoned Authentic"},
+	{"by",   "Abandoned Authentic"},
+	{"byz",  "Abandoned Authentic"},
+	{"cx",   "Abandoned Authentic"},
+	{"CTxz", "Abandoned Authentic"},
+	{"Ctx",  "Abandoned Authentic"},
+	{"ctx",  "Abandoned Authentic"},
+	{"Cuxz", "Abandoned Authentic"},
+	{"Cx",   "Abandoned Authentic"},
+	{"Cxz",  "Abandoned Authentic"},
+	{"cxz",  "Abandoned Authentic"},
+	{"BTcx", "Abandoned Authentic"},
+	{"Bbtyz","Abandoned Authentic"},
+	{"Bbyz", "Abandoned Authentic"},
+	{"By",   "Abandoned Authentic"},
+	{"Bxy",  "Abandoned Authentic"},
+	{"Bxyz", "Abandoned Authentic"},
+	{"Byz",  "Abandoned Authentic"},
+	{"BTuy", "Abandoned Authentic"},
+	{"BTy",  "Abandoned Authentic"},
+	{"BTyz", "Abandoned Authentic"},
+	{"Bty",  "Abandoned Authentic"},
+	{"Btyz", "Abandoned Authentic"},
+	{"Tcux", "Abandoned Authentic"},
+	{"Tby",  "Abandoned Authentic"},
+	{"Tbuy", "Abandoned Authentic"},
+	{"Tuy",  "Abandoned Authentic"},
+	{"uxy",  "Abandoned Authentic"},
+	{"uyz",  "Abandoned Authentic"},
+	{"uy",   "Abandoned Authentic"},
+	{"Cz",   "Abandoned Clausula Vera"},
+	{"Ty",   "Abandoned Clausula Vera"},
+	{"Tty",  "Abandoned Clausula Vera"},
+	{"cz",   "Abandoned Clausula Vera"},
+	{"ty",   "Abandoned Clausula Vera"},
+	{"yz",   "Abandoned Clausula Vera"},
+	{"ct",   "Evaded Clausula Vera"},
+	{"BTat", "Evaded Altizans Only"},
+	{"BTaz", "Evaded Altizans Only"},
+	{"Ta",   "Evaded Altizans Only"},
+	{"Tat",  "Evaded Altizans Only"},
+	{"Tax",  "Evaded Altizans Only"},
+	{"Taz",  "Evaded Altizans Only"},
+	{"Tc",   "Evaded Clausula Vera"},
+	{"Tct",  "Evaded Clausula Vera"},
+	{"Tcx",  "Evaded Clausula Vera"},
+	{"Tcxz", "Evaded Clausula Vera"},
+	{"Tcz",  "Evaded Clausula Vera"},
+	{"Txy",  "Abandoned Authentic"},
+	{"txy",  "Abandoned Authentic"},
+	{"txyz", "Abandoned Authentic"},
+	{"xy",   "Abandoned Authentic"},
+	{"xyz",  "Abandoned Authentic"},
+	// Empty-string labels suppress the cadence annotation entirely (no LO line,
+	// no UNKNOWN).  Use these to filter false-positive CVF combinations.
+	};
+
+	for (const auto& entry : labels) {
+		m_cadenceLabels.emplace(entry[0], entry[1]);
+	}
 }
 
 //////////////////////////////
@@ -2691,42 +3447,10 @@ void Tool_autocadence::prepareCadenceLabels(void) {
 // Tool_autocadence::addCadenceDefinition --
 //
 
-// addCadenceDefinition("z", "y",	"zy2",	R"(^(?:R_1|-?\d+_-?[^1]):1, -2_1:-2, -3_R:R, R_)");
-//		bool        split              (std::vector<std::string>& entries,
-//		                                const std::string& buffer,
-//		                                const std::string& separator);
-//
-
 void Tool_autocadence::addCadenceDefinition(const std::string& funcL, const std::string& funcU,
 		const std::string& name, const std::string& regex) {
-	vector<string> pieces;
-	HumRegex hre;
-	hre.split(pieces, regex, ",");
-	string output;
-	if (pieces.empty()) {
-		output = pieces[0];
-	}
-	if (pieces.size() < 3) {
-		output += " ,";
-		output += pieces[1];
-		output += " ,";
-		output += pieces[2];
-	} else if (pieces.size() > 2) {
-		output += ", ";
-		output += pieces[1];
-	}
-	for (int i=3; i<(int)pieces.size(); i++) {
-		output += pieces[i];
-		if (i < (int)pieces.size() - 1) {
-			output += "Y, [^\\s]+_1:1*, ";
-		}
-	}
 	m_definitions.resize(m_definitions.size() + 1);
-	if (m_repeatQ) {
-		m_definitions.back().setDefinition(funcL, funcU, name, output);
-	} else {
-		m_definitions.back().setDefinition(funcL, funcU, name, regex);
-	}
+	m_definitions.back().setDefinition(funcL, funcU, name, regex);
 }
 
 
@@ -2808,61 +3532,44 @@ void Tool_autocadence::prepareCvfNames(void) {
 
 //////////////////////////////
 //
-// Tool_autocadence::prepareDissonances --
+// Tool_autocadence::prepareDissonances -- Run the dissonance analysis
+//     from Tool_dissonant and store each label on its note as the
+//     "auto" "dissonance" parameter.
 //
 
 void Tool_autocadence::prepareDissonances(HumdrumFile& infile) {
-	HumdrumFile dfile;
-	stringstream ss;
-	ss << infile;
-	dfile.readString(ss.str());
-   hum::Tool_dissonant dissonant;
-	dissonant.run(dfile);
-	// cout << dfile;
-	int dsize = dfile.getLineCount();
-	int isize = infile.getLineCount();
-	if (dsize != isize) {
-		// number of lines in input/output are expected to be the same.
-		cerr << "LINE COUNTS OF FILES FOR DISSONANCE ANALYSIS DO NOT MATCH." << endl;
+	Tool_dissonant dissonant;
+	vector<vector<string>> labels;
+	dissonant.getDissonanceLabels(infile, labels);
+
+	vector<HTp> kernspines;
+	infile.getKernSpineStartList(kernspines);
+	if (labels.size() != kernspines.size()) {
+		cerr << "VOICE COUNTS FOR DISSONANCE ANALYSIS DO NOT MATCH." << endl;
 		return;
 	}
-	for (int i=0; i<infile.getLineCount(); i++) {
-		if (infile[i].isData()) {
-			prepareDissonancesForLine(infile[i], dfile[i]);
-		}
-	}
-}
 
-
-
-//////////////////////////////
-//
-// Tool_autocadence::prepareDissonancesForLine -- Transfer dissonance analysis to
-//     input file for a single data line.
-//
-
-void Tool_autocadence::prepareDissonancesForLine(HumdrumLine& iline, HumdrumLine& dline) {
-	vector<HTp> ikern;
-	for (int i=0; i<iline.getFieldCount(); i++) {
-		HTp token = iline.token(i);
-		if (token->isKern()) {
-			ikern.push_back(token);
-		}
-	}
-
-	int kindex = -1;
-	for (int i=0; i<dline.getFieldCount(); i++) {
-		HTp token = dline.token(i);
-		if (token->isKern()) {
-			kindex++;
-			continue;
-		}
-		if (token->isDataType("**cdata-rdiss")) {
-			if (kindex >= 0) {
-				string text = token->getText();
-				if (text != ".") {
-					ikern.at(kindex)->setValue("auto", "dissonance", text);
+	for (int v=0; v<(int)labels.size(); v++) {
+		int track = kernspines[v]->getTrack();
+		for (int i=0; i<infile.getLineCount(); i++) {
+			if (!infile[i].isData()) {
+				continue;
+			}
+			const string& label = labels[v][i];
+			if (label.empty() || (label == ".")) {
+				continue;
+			}
+			// Store the label on the last **kern token of the voice's track
+			// on this line (the last subspine if the track is split).
+			HTp target = NULL;
+			for (int j=0; j<infile[i].getFieldCount(); j++) {
+				HTp token = infile.token(i, j);
+				if (token->isKern() && (token->getTrack() == track)) {
+					target = token;
 				}
+			}
+			if (target) {
+				target->setValue("auto", "dissonance", label);
 			}
 		}
 	}
@@ -2965,6 +3672,16 @@ string Tool_autocadence::getIntervalName(const string& b40) {
 
 	if (b40 == "40") return "8";
 	if (b40 == "-40") return "-8";
+
+	// Compound equivalents (simple interval + octave(s) in base-40):
+	if (b40 == "57")  return "11";   // P11 = P4 + P8
+	if (b40 == "-57") return "-11";
+	if (b40 == "63")  return "12";   // P12 = P5 + P8
+	if (b40 == "-63") return "-12";
+	if (b40 == "97")  return "18";   // P18 = P4 + 2×P8
+	if (b40 == "-97") return "-18";
+	if (b40 == "103") return "19";   // P19 = P5 + 2×P8
+	if (b40 == "-103") return "-19";
 
 	return b40;
 }

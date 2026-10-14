@@ -31,6 +31,9 @@ class Tool_dissonant : public HumTool {
 		bool     run               (const string& indata, ostream& out);
 		bool     run               (HumdrumFile& infile, ostream& out);
 
+		void     getDissonanceLabels(HumdrumFile& infile,
+		                            vector<vector<string>>& results);
+
 	protected:
 		void    doAnalysis         (vector<vector<string> >& results,
 		                            NoteGrid& grid,
@@ -80,6 +83,7 @@ class Tool_dissonant : public HumTool {
 		void    changePitch        (HTp note2, HTp note1);
 		void    simplePreviousMerge(HTp pnote, HTp cnote);
 		void    simpleNextMerge    (HTp cnote, HTp nnote);
+		void    adjustBeamsAfterMerge(HTp survivor, HTp removed);
 		void    changePitchOfTieGroupFollowing(HTp note, const string& pitch);
 		void    mergeWithPreviousNoteViaTies(HTp pnote, HTp cnote);
 		void    mergeWithPreviousNote(HumdrumFile& infile, NoteCell* cell);
@@ -91,6 +95,9 @@ class Tool_dissonant : public HumTool {
 		bool    isSuspension         (HTp token);
 		void    addSuspensionMarkToNote(HTp start, const string& marks);
 		void    adjustSuspensionColors(HTp speinstart);
+		void    clearPatientsOfLostAgent(vector<vector<string>>& results,
+		                            int vindex, int lineindex,
+		                            vector<int>& agentPatients);
 
 	private:
 		vector<HTp> m_kernspines;
