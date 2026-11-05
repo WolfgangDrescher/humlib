@@ -66,6 +66,7 @@
 #include "tool-meter.h"
 #include "tool-metlev.h"
 #include "tool-metweight.h"
+#include "tool-metpos.h"
 #include "tool-mint.h"
 #include "tool-modori.h"
 #include "tool-msearch.h"
@@ -346,6 +347,8 @@ bool Tool_filter::run(HumdrumFileSet& infiles) {
 			RUNTOOL(metlev, infile, commands[i].second, status);
 		} else if (commands[i].first == "metweight") {
 			RUNTOOL(metweight, infile, commands[i].second, status);
+		} else if (commands[i].first == "metpos") {
+			RUNTOOL(metpos, infile, commands[i].second, status);
 		} else if (commands[i].first == "mint") { // humlib version of Humdrum Toolkit mint tool
 			RUNTOOL(mint, infile, commands[i].second, status);
 		} else if (commands[i].first == "mintx") { // humlib cli name

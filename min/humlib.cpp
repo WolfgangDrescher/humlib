@@ -1,7 +1,7 @@
 //
 // Programmer:    Craig Stuart Sapp <craig@ccrma.stanford.edu>
 // Creation Date: Sat Aug  8 12:24:49 PDT 2015
-// Last Modified: Do. 15 Okt. 2026 00:43:58 CEST
+// Last Modified: Do.  5 Nov. 2026 17:57:15 CET
 // Filename:      min/humlib.cpp
 // URL:           https://github.com/craigsapp/humlib/blob/master/min/humlib.cpp
 // Syntax:        C++11
@@ -37402,6 +37402,11 @@ bool HumdrumToken::isStaff(void) const {
 //
 
 bool HumdrumToken::isRest(void) {
+	if (!isData()) {
+		// Comments and interpretations are never rests, even if they
+		// contain an "r" (such as "!LO:TX:color=red").
+		return false;
+	}
 	if (isKernLike()) {
 		if (isChord()) {
 			// rests are not allowed in chords, so return false if
@@ -61520,6 +61525,7 @@ Tool_autocadence::Tool_autocadence(void) {
 	define("count|match-count=b",        "Return number of cadence formulas that match");
 	define("i|info=b",                   "Show only information not score");
 	define("t|cadence-table=b",          "Show a table of the counts of each cadence label");
+	define("a|authentic-labels=i:1",     "Authentic strength labels (default 1): 0=skip semplici, 1=text, 2=text+attenuated, 3=decimal, 4=decimal+attenuated");
 
 	define("M|analytic-markup|markup=b", "Show melodic interval to last note");
 	define("L|last-melody=b",            "Show melodic interval to last note");
@@ -61601,6 +61607,10 @@ void Tool_autocadence::initialize(void) {
 	m_repeatQ                  =  getBoolean("repeat");
 	m_infoQ                    =  getBoolean("info");
 	m_tableQ                   =  getBoolean("cadence-table");
+	m_authenticLabels          =  getInteger("authentic-labels");
+	if ((m_authenticLabels < 0) || (m_authenticLabels > 4)) {
+		m_authenticLabels = 1;
+	}
 	m_lowestQ                  =  getBoolean("lowest");
 	m_showSuspensionsQ         = !getBoolean("do-not-show-suspensions");
 	m_markupQ                  =  getBoolean("analytic-markup");
@@ -61699,7 +61709,9 @@ void Tool_autocadence::processFile(HumdrumFile& infile) {
 		}
 	}
 
-	prepareAuthenticBAnalyses(infile);
+	if (m_authenticLabels != 0) {
+		prepareCadenzeSempliciAnalyses(infile);
+	}
 
 	// markup score with matches and CVF
 	markupScore(infile);
@@ -62412,6 +62424,9 @@ void Tool_autocadence::printCadenceTable(void) {
 
 	m_humdrum_text.str("");
 	m_humdrum_text << "**count\t**cadence" << endl;
+	// *cdata tells kernify (run by verovio on staffless input) to render
+	// these spines as text (**cdata-*) instead of hiding them (**xcdata-*).
+	m_humdrum_text << "*cdata\t*cdata" << endl;
 	for (int i=0; i<(int)rows.size(); i++) {
 		m_humdrum_text << rows[i].second << "\t" << rows[i].first << endl;
 	}
@@ -63047,9 +63062,14 @@ void Tool_autocadence::printIntervalDataLineScore(HumdrumFile& infile,
 			}
 		}
 	}
+	// Cadenze Semplici (every hard criterion passes) are labeled "Authentic"
+	// with a strength, overriding any CVF-based label and not requiring a CVF
+	// match.  A CVF-table "Authentic" has no strength attached.
+	bool sempliciQ = (m_authenticLabels != 0) &&
+			meetsCadenzeSempliciCriteria(infile, index);
 	if (!clabel.empty()) {
 		string slabel = sortUniqueChars(clabel);
-		string cadence = getCadenceLabel(slabel, infile, index);
+		string cadence = sempliciQ ? "Authentic" : getCadenceLabel(slabel);
 		// Empty string = suppressor entry in m_cadenceLabels: no cadence annotation.
 		if (!cadence.empty()) {
 			string infolabel = cadence;
@@ -63063,28 +63083,30 @@ void Tool_autocadence::printIntervalDataLineScore(HumdrumFile& infile,
 					infolabel = "Phrygian " + infolabel;
 				}
 			}
-			cadence = infolabel;
-			HumRegex hre;
-			hre.replaceDestructive(cadence, "\\n", " ", "g");
-			if (cadence.find("\\n") != std::string::npos) {
-				cadence += "\\n";
+			if (sempliciQ) {
+				double strength = getCadenzeSempliciStrength(infile, index, slabel);
+				infolabel = writeCadenzeSempliciLine(cadenceline, infolabel, strength);
+			} else {
+				cadenceline << "!!LO:TX:a:B:rj:color=red:cadence:t=";
+				cadenceline << getCadenceDisplayText(infolabel);
 			}
-			cadenceline << "!!LO:TX:a:B:rj:color=red:cadence:t=";
-			cadenceline << cadence;
-			if (m_tableQ) {
+			// A hidden (comment-only) Cadenze Semplici returns an empty label and
+			// is left out of -t and -i.
+			if (m_tableQ && !infolabel.empty()) {
 				m_cadenceTypeCounts[infolabel]++;
 			}
-			if (m_infoQ) {
+			if (m_infoQ && !infolabel.empty()) {
 				m_info << "cvf=" << slabel << "\tcadence=" << infolabel << "\\nZZZ" << "\tM=" << m_barnum.at(index) << "\tfile=" << infile.getFilename() << endl;
 			}
 		}
-	} else if (meetsAuthenticBCriteria(infile, index)) {
-		cadenceline << "!!LO:TX:a:B:rj:color=red:cadence:t=AuthenticB";
-		if (m_tableQ) {
-			m_cadenceTypeCounts["AuthenticB"]++;
+	} else if (sempliciQ) {
+		double strength = getCadenzeSempliciStrength(infile, index, "");
+		string infolabel = writeCadenzeSempliciLine(cadenceline, "Authentic", strength);
+		if (m_tableQ && !infolabel.empty()) {
+			m_cadenceTypeCounts[infolabel]++;
 		}
-		if (m_infoQ) {
-			m_info << "cvf=\tcadence=AuthenticB\\nZZZ" << "\tM=" << m_barnum.at(index) << "\tfile=" << infile.getFilename() << endl;
+		if (m_infoQ && !infolabel.empty()) {
+			m_info << "cvf=\tcadence=" << infolabel << "\\nZZZ" << "\tM=" << m_barnum.at(index) << "\tfile=" << infile.getFilename() << endl;
 		}
 	}
 
@@ -63196,19 +63218,35 @@ void Tool_autocadence::printIntervalDataLineScore(HumdrumFile& infile,
 
 //////////////////////////////
 //
-// Tool_autocadence::getCadenceLabel -- Look up the CVF combination label,
-//     then apply AuthenticB if every AuthenticB analysis strand passes.
-//     AuthenticB does not require a CVF match; that case is handled when
-//     printing a line that has no CVF labels.
+// Tool_autocadence::getCadenceDisplayText -- Cadence label as typeset in
+//     the score: one word per line (spaces become "\\n"), with a final
+//     "\\n" when the label has more than one line, such as
+//     "Evaded\\nClausula\\nVera\\n".  -t and -i keep the spaces.
+//
+
+string Tool_autocadence::getCadenceDisplayText(const string& label) {
+	string output = label;
+	HumRegex hre;
+	hre.replaceDestructive(output, "\\n", " ", "g");
+	if (output.find("\\n") != std::string::npos) {
+		output += "\\n";
+	}
+	return output;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::getCadenceLabel -- Look up the CVF combination label.
+//     Cadenze Semplici are checked separately by the caller, since they
+//     override the CVF label.
 //     Returns "UNKNOWN" for CVF combos absent from m_cadenceLabels.
 //     Returns an empty string for suppressor entries (explicit "" values),
 //     which means no cadence annotation should be written.
 //
 
-string Tool_autocadence::getCadenceLabel(const string& cvflabel, HumdrumFile &infile, int index) {
-	if (meetsAuthenticBCriteria(infile, index)) {
-		return "AuthenticB";
-	}
+string Tool_autocadence::getCadenceLabel(const string& cvflabel) {
 	auto it = m_cadenceLabels.find(cvflabel);
 	if (it == m_cadenceLabels.end()) {
 		return "UNKNOWN";
@@ -63220,13 +63258,188 @@ string Tool_autocadence::getCadenceLabel(const string& cvflabel, HumdrumFile &in
 
 //////////////////////////////
 //
-// Tool_autocadence::prepareAuthenticBAnalyses -- Run supporting analyses used
-//     by AuthenticB.  Add new strand preparations here as they are introduced.
+// Tool_autocadence::prepareCadenzeSempliciAnalyses -- Run supporting analyses used
+//     by Cadenze Semplici.  Add new strand preparations here as they are introduced.
 //
 
-void Tool_autocadence::prepareAuthenticBAnalyses(HumdrumFile& infile) {
+void Tool_autocadence::prepareCadenzeSempliciAnalyses(HumdrumFile& infile) {
 	prepareClosingCounts(infile);
 	prepareExtremisBass(infile);
+	prepareAverageNoteDuration(infile);
+	prepareMensurationChanges(infile);
+	preparePlineAttacks(infile);
+	prepareMetricPositions(infile);
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::prepareMetricPositions -- Metric position of every line
+//     from Tool_metpos (1 for the start of a measure, larger numbers for
+//     weaker positions, 0 for none).
+//
+
+void Tool_autocadence::prepareMetricPositions(HumdrumFile& infile) {
+	Tool_metpos metpos;
+	vector<string> argv;
+	argv.push_back("metpos");
+	metpos.process(argv);
+	metpos.getMetricPositions(infile, m_metricPositions);
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::preparePlineAttacks -- Mark the data lines where a voice
+//     starts a poetic line (a *pline observation).  *pline tokens already in
+//     the **kern spines of the input are used when present; otherwise the
+//     poetic lines are computed with Tool_pliner.
+//
+
+void Tool_autocadence::preparePlineAttacks(HumdrumFile& infile) {
+	m_plineAttacks.clear();
+	m_plineAttacks.resize(infile.getLineCount());
+	int trackCount = infile.getTrackCount();
+	for (int i=0; i<infile.getLineCount(); i++) {
+		if (infile[i].isData()) {
+			m_plineAttacks[i].resize(trackCount + 1, false);
+		}
+	}
+
+	// Existing *pline tokens apply to the next data token in their spine.
+	bool found = false;
+	for (int i=0; i<infile.getLineCount(); i++) {
+		if (!infile[i].isInterpretation()) {
+			continue;
+		}
+		for (int j=0; j<infile[i].getFieldCount(); j++) {
+			HTp token = infile.token(i, j);
+			if (!token->isKern()) {
+				continue;
+			}
+			if (token->compare(0, 7, "*pline:") != 0) {
+				continue;
+			}
+			HTp next = token->getNextToken();
+			while (next && !next->isData()) {
+				next = next->getNextToken();
+			}
+			if (!next) {
+				continue;
+			}
+			m_plineAttacks.at(next->getLineIndex()).at(token->getTrack()) = true;
+			found = true;
+		}
+	}
+	if (found) {
+		return;
+	}
+
+	Tool_pliner pliner;
+	vector<string> argv;
+	argv.push_back("pliner");
+	pliner.process(argv);
+	map<int, map<int, string>> plines;
+	pliner.getPlines(infile, plines);
+	for (auto& lineEntry : plines) {
+		int line = lineEntry.first;
+		if ((line < 0) || (line >= (int)m_plineAttacks.size())) {
+			continue;
+		}
+		if (m_plineAttacks[line].empty()) {
+			continue;
+		}
+		for (auto& trackEntry : lineEntry.second) {
+			int track = trackEntry.first;
+			if ((track > 0) && (track <= trackCount)) {
+				m_plineAttacks[line][track] = true;
+			}
+		}
+	}
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::prepareMensurationChanges -- Mark the interpretation
+//     lines where any **kern spine changes its time signature (*M), its
+//     mensuration sign (*met), or its original mensuration sign (*omet).
+//     The first value in each spine is not a change, nor is a restatement
+//     of the value that is already active.
+//
+
+void Tool_autocadence::prepareMensurationChanges(HumdrumFile& infile) {
+	m_mensurationChanges.clear();
+	m_mensurationChanges.resize(infile.getLineCount(), false);
+
+	// Active *M, *met and *omet values for each track.
+	vector<vector<string>> active(infile.getTrackCount() + 1, vector<string>(3));
+
+	for (int i=0; i<infile.getLineCount(); i++) {
+		if (!infile[i].isInterpretation()) {
+			continue;
+		}
+		for (int j=0; j<infile[i].getFieldCount(); j++) {
+			HTp token = infile.token(i, j);
+			if (!token->isKern()) {
+				continue;
+			}
+			int kind = -1;
+			if (token->isTimeSignature()) {
+				kind = 0;
+			} else if (token->isMensurationSymbol()) {
+				kind = 1;
+			} else if (token->isOriginalMensurationSymbol()) {
+				kind = 2;
+			}
+			if (kind < 0) {
+				continue;
+			}
+			string& previous = active.at(token->getTrack()).at(kind);
+			if ((!previous.empty()) && (previous != *token)) {
+				m_mensurationChanges[i] = true;
+			}
+			previous = *token;
+		}
+	}
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::prepareAverageNoteDuration -- Mean tied duration of
+//     every note attack in the piece (rests, grace notes, null tokens and
+//     tie continuations are ignored).
+//
+
+void Tool_autocadence::prepareAverageNoteDuration(HumdrumFile& infile) {
+	m_averageNoteDuration = 0.0;
+	double sum = 0.0;
+	int count = 0;
+	for (int i=0; i<infile.getLineCount(); i++) {
+		if (!infile[i].isData()) {
+			continue;
+		}
+		for (int j=0; j<infile[i].getFieldCount(); j++) {
+			HTp token = infile.token(i, j);
+			if (!token->isKern()) {
+				continue;
+			}
+			if (token->isNull() || token->isRest() || token->isGrace() ||
+					token->isSecondaryTiedNote()) {
+				continue;
+			}
+			sum += token->getTiedDuration().getFloat();
+			count++;
+		}
+	}
+	if (count > 0) {
+		m_averageNoteDuration = sum / count;
+	}
 }
 
 
@@ -63272,35 +63485,26 @@ void Tool_autocadence::prepareClosingCounts(HumdrumFile& infile) {
 
 //////////////////////////////
 //
-// Tool_autocadence::meetsAuthenticBCriteria -- Combine independent analysis
-//     strands that must all pass before a cadence is labeled AuthenticB.
-//     Add further strands as additional checks below.
+// Tool_autocadence::meetsCadenzeSempliciCriteria -- Hard criteria: every check
+//     here must pass before a moment is labeled as a Cadenze Semplici
+//     ("Authentic" with a strength).  How strong the
+//     cadence is determined by getCadenzeSempliciStrength().
 //
 
-bool Tool_autocadence::meetsAuthenticBCriteria(HumdrumFile& infile, int index) {
-	// Strand 1: extremis lowest line approaches by an "incorrect" bassizans
+bool Tool_autocadence::meetsCadenzeSempliciCriteria(HumdrumFile& infile, int index) {
+	// Hard 1: extremis lowest line approaches by an "incorrect" bassizans
 	// (falling fifth or rising fourth), including voice transfers.
 	if (!hasIncorrectBassizans(index)) {
 		return false;
 	}
 
-	// Strand 2: at least one voice closes at the cadential arrival.
-	if (!hasClosingVoicesAtArrival(index)) {
-		return false;
-	}
-
-	// Strand 3: no suspension (s/g/S/G) from the arrival through two minims later.
-	if (!hasNoEnsuingSuspension(infile, index)) {
-		return false;
-	}
-
-	// Strand 4: last --root observation before the arrival is an uppercase
+	// Hard 2: last --root observation before the arrival is an uppercase
 	// letter (major triad or major third).  CVF matches are not required.
 	if (!hasPreviousMajorSonority(index)) {
 		return false;
 	}
 
-	// Strand 5: a voice moves from the leading tone up by semitone onto
+	// Hard 3: a voice moves from the leading tone up by semitone onto
 	// the root of the arrival chord, in that same voice, at the arrival.
 	if (!hasLeadingToneToRoot(infile, index)) {
 		return false;
@@ -63313,16 +63517,450 @@ bool Tool_autocadence::meetsAuthenticBCriteria(HumdrumFile& infile, int index) {
 
 //////////////////////////////
 //
+// Tool_autocadence::getCadenzeSempliciStrength -- Soft criteria for a moment that
+//     already passed meetsCadenzeSempliciCriteria().  Each satisfied criterion
+//     scores 1, the total is normalized by the number of criteria to the
+//     range 0..1, and rounded to 3 decimal places.  cvflabel is the sorted
+//     CVF combination at the arrival (empty when there are no CVF labels).
+//     Add further soft criteria as additional checks below.
+//
+
+double Tool_autocadence::getCadenzeSempliciStrength(HumdrumFile& infile, int index,
+		const string& cvflabel) {
+	int score = 0;
+	int total = 0;
+	auto criterion = [&](bool passed) {
+		total++;
+		if (passed) {
+			score++;
+		}
+	};
+	// A criterion worth up to maximum points.
+	auto weightedCriterion = [&](int points, int maximum) {
+		total += maximum;
+		score += points;
+	};
+
+	// Soft 1: a "C" (cantizans) CVF is present at the cadential arrival.
+	criterion(cvflabel.find('C') != string::npos);
+
+	// Soft 2: at least one voice closes at the cadential arrival.
+	criterion(hasClosingVoicesAtArrival(index));
+
+	// Soft 3: no suspension (s/g/S/G) from the arrival through two minims later.
+	criterion(hasNoEnsuingSuspension(infile, index));
+
+	// Soft 4: the highest note of the arrival sonority is not the chord fifth.
+	criterion(!hasFifthAsHighestNote(infile, index));
+
+	// Soft 5: the arrival notes are longer than the piece's average note.
+	criterion(hasLongArrivalNotes(infile, index));
+
+	// Soft 6: the bassizans leap into the arrival happens in one real voice
+	// rather than only in the synthetic lowest line.
+	criterion(hasRealVoiceBassizans(infile, index));
+
+	// Soft 7: a mensuration change happens in the arrival's measure or in
+	// the measure after it.
+	criterion(hasMensurationChange(infile, index));
+
+	// Soft 8: either no voice starts a poetic line at the arrival but at
+	// least one voice starts a poetic line on its next attack after the
+	// arrival, or the arrival's measure ends in a double bar.
+	criterion(hasPlineAfterArrival(infile, index) ||
+			hasDoubleBarEnding(infile, index));
+
+	// Soft 9: the metric position of the arrival: 2 points at the start of
+	// a measure (metpos 1), 1 point at the next strongest position
+	// (metpos 2), and 0 otherwise.
+	weightedCriterion(getMetricPositionPoints(index), 2);
+
+	return std::round(1000.0 * score / total) / 1000.0;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::getCadenzeSempliciStrengthText -- Cadenze Semplici strength printed
+//     with up to 3 decimal places and trailing zeros dropped, such as
+//     "0.667", "0.3", "1.0" or "0.0".
+//
+
+string Tool_autocadence::getCadenzeSempliciStrengthText(double strength) {
+	char buffer[32];
+	snprintf(buffer, sizeof(buffer), "%.3f", strength);
+	string output = buffer;
+	output.erase(output.find_last_not_of('0') + 1);
+	if (!output.empty() && (output.back() == '.')) {
+		output += '0';
+	}
+	return output;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::getCadenzeSempliciCategory -- Strength category for -a 1/2:
+//     "Strong Authentic" (>= 0.75), "Weak Authentic" (>= 0.45) or
+//     "Attenuated Authentic" (< 0.45).
+//
+
+string Tool_autocadence::getCadenzeSempliciCategory(double strength) {
+	if (strength >= 0.75) {
+		return "Strong Authentic";
+	} else if (strength >= 0.45) {
+		return "Weak Authentic";
+	}
+	return "Attenuated Authentic";
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::writeCadenzeSempliciLine -- Write the cadence line for a
+//     Cadenze Semplici moment.  label is "Authentic", possibly with a prefix
+//     such as "Phrygian ".  Modes for -a (--authentic-labels):
+//        0: Cadenze Semplici analysis skipped (this function is not called)
+//        1: text category (Strong/Weak/Attenuated Authentic);
+//           Attenuated written as a comment that verovio does not display
+//        2: same as 1, with Attenuated displayed
+//        3: decimal strength; Attenuated written as a hidden comment
+//        4: decimal strength, all displayed
+//     Default is mode 1.  Returns the label used for -t counts and -i info:
+//     the category in modes 1/2, or "Authentic 0.5" style in modes 3/4.
+//     Returns an empty string for a hidden cadence, which -t and -i skip.
+//
+
+string Tool_autocadence::writeCadenzeSempliciLine(ostream& out, const string& label,
+		double strength) {
+	int mode = m_authenticLabels;
+	bool textQ = (mode <= 2);
+	bool hiddenQ = ((mode == 1) || (mode == 3)) &&
+			(getCadenzeSempliciCategory(strength) == "Attenuated Authentic");
+
+	string output = label;
+	if (textQ) {
+		size_t pos = output.find("Authentic");
+		if (pos != string::npos) {
+			output.replace(pos, 9, getCadenzeSempliciCategory(strength));
+		}
+	}
+	string strengthText = getCadenzeSempliciStrengthText(strength);
+
+	if (hiddenQ) {
+		// Plain global comment: kept in the score but not typeset.
+		out << "!!" << output;
+		if (!textQ) {
+			out << ": " << strengthText;
+		}
+		return "";
+	}
+	if (!textQ) {
+		output += " " + strengthText;
+	}
+	out << "!!LO:TX:a:B:rj:color=red:cadence:t=" << getCadenceDisplayText(output);
+	return output;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::hasFifthAsHighestNote -- True when the highest sounding
+//     pitch at the arrival (including notes sustained into it) is a perfect
+//     fifth above the arrival root.
+//
+
+bool Tool_autocadence::hasFifthAsHighestNote(HumdrumFile& infile, int index) {
+	int rootPc = arrivalRootPitchClass(infile, index);
+	if (rootPc < 0) {
+		return false;
+	}
+	int highest = 0;
+	vector<int> midis = infile[index].getMidiPitchesResolveNull();
+	for (int midi : midis) {
+		int m = midi < 0 ? -midi : midi;
+		if (m > highest) {
+			highest = m;
+		}
+	}
+	if (highest <= 0) {
+		return false;
+	}
+	return (highest - rootPc + 120) % 12 == 7;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::hasLongArrivalNotes -- True when the mean tied duration
+//     of the notes attacked at the arrival is greater than the average note
+//     duration of the whole piece.
+//
+
+bool Tool_autocadence::hasLongArrivalNotes(HumdrumFile& infile, int index) {
+	if ((index < 0) || (index >= infile.getLineCount())) {
+		return false;
+	}
+	if (!infile[index].isData()) {
+		return false;
+	}
+	double sum = 0.0;
+	int count = 0;
+	for (int j=0; j<infile[index].getFieldCount(); j++) {
+		HTp token = infile.token(index, j);
+		if (!token->isKern()) {
+			continue;
+		}
+		if (token->isNull() || token->isRest() || token->isGrace() ||
+				token->isSecondaryTiedNote()) {
+			continue;
+		}
+		sum += token->getTiedDuration().getFloat();
+		count++;
+	}
+	if (count == 0) {
+		return false;
+	}
+	return (sum / count) > m_averageNoteDuration;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::hasMensurationChange -- True when a mensuration change
+//     (see prepareMensurationChanges) happens anywhere in the measure that
+//     contains the arrival or in the measure after it.
+//
+
+bool Tool_autocadence::hasMensurationChange(HumdrumFile& infile, int index) {
+	if ((index < 0) || (index >= (int)m_mensurationChanges.size())) {
+		return false;
+	}
+
+	// Before the arrival: back to the barline that starts its measure.
+	for (int i=index-1; i>=0; i--) {
+		if (infile[i].isBarline()) {
+			break;
+		}
+		if (m_mensurationChanges[i]) {
+			return true;
+		}
+	}
+
+	// After the arrival: stop at the barline that ends the following measure.
+	int barlines = 0;
+	for (int i=index+1; i<infile.getLineCount(); i++) {
+		if (infile[i].isBarline()) {
+			barlines++;
+			if (barlines >= 2) {
+				break;
+			}
+		}
+		if (m_mensurationChanges[i]) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::hasPlineAfterArrival -- True when no voice has a *pline
+//     observation at the arrival, and at least one voice has a *pline
+//     observation on its next note attack after the arrival.  That attack
+//     must be in the arrival's measure or in one of the two measures after
+//     it.
+//
+
+bool Tool_autocadence::hasPlineAfterArrival(HumdrumFile& infile, int index) {
+	if ((index < 0) || (index >= (int)m_plineAttacks.size())) {
+		return false;
+	}
+	if (m_plineAttacks[index].empty()) {
+		return false;
+	}
+	for (bool plineQ : m_plineAttacks[index]) {
+		if (plineQ) {
+			return false;
+		}
+	}
+
+	// Voices whose next attack after the arrival has already been checked.
+	vector<bool> done(infile.getTrackCount() + 1, false);
+
+	// Stop at the barline that ends the second measure after the arrival.
+	int barlines = 0;
+	for (int i=index+1; i<infile.getLineCount(); i++) {
+		if (infile[i].isBarline()) {
+			barlines++;
+			if (barlines >= 3) {
+				break;
+			}
+			continue;
+		}
+		if (!infile[i].isData()) {
+			continue;
+		}
+		for (int j=0; j<infile[i].getFieldCount(); j++) {
+			HTp token = infile.token(i, j);
+			if (!token->isKern()) {
+				continue;
+			}
+			int track = token->getTrack();
+			if (done[track]) {
+				continue;
+			}
+			if (token->isNull() || token->isRest() || token->isSecondaryTiedNote()) {
+				continue;
+			}
+			done[track] = true;
+			if (m_plineAttacks[i][track]) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::hasDoubleBarEnding -- True when the barline that ends
+//     the arrival's measure is a double bar in any **kern spine: a final
+//     barline (==), a double bar (=||), or a repeat sign (such as =:|! or
+//     =!|:).
+//
+
+bool Tool_autocadence::hasDoubleBarEnding(HumdrumFile& infile, int index) {
+	if ((index < 0) || (index >= infile.getLineCount())) {
+		return false;
+	}
+	for (int i=index+1; i<infile.getLineCount(); i++) {
+		if (!infile[i].isBarline()) {
+			continue;
+		}
+		for (int j=0; j<infile[i].getFieldCount(); j++) {
+			HTp token = infile.token(i, j);
+			if (!token->isKern()) {
+				continue;
+			}
+			if ((token->find("==") != string::npos) ||
+					(token->find("||") != string::npos) ||
+					(token->find("|!") != string::npos) ||
+					(token->find("!|") != string::npos)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	return false;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::getMetricPositionPoints -- Points for the metric
+//     position of the arrival: 2 for metpos 1, 1 for metpos 2, else 0.
+//
+
+int Tool_autocadence::getMetricPositionPoints(int index) {
+	if ((index < 0) || (index >= (int)m_metricPositions.size())) {
+		return 0;
+	}
+	switch (m_metricPositions[index]) {
+		case 1:  return 2;
+		case 2:  return 1;
+		default: return 0;
+	}
+}
+
+
+
+//////////////////////////////
+//
+// Tool_autocadence::hasRealVoiceBassizans -- True when a single voice
+//     carries the extremis bassizans leap: it attacks the arrival bass
+//     pitch, and its own previous note is the previous extremis bass pitch.
+//     A leap that only exists in the synthetic line (a voice transfer)
+//     returns false.
+//
+
+bool Tool_autocadence::hasRealVoiceBassizans(HumdrumFile& infile, int index) {
+	if ((index < 0) || (index >= (int)m_extremisB40.size())) {
+		return false;
+	}
+	int arrivalB40 = m_extremisB40[index];
+	int previousB40 = m_extremisPrevB40[index];
+	if ((arrivalB40 <= 0) || (previousB40 <= 0)) {
+		return false;
+	}
+
+	auto hasPitch = [](HTp token, int b40) -> bool {
+		vector<string> subtokens = token->getSubtokens();
+		for (const string& subtoken : subtokens) {
+			if (Convert::kernToBase40(subtoken) == b40) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	for (int j=0; j<infile[index].getFieldCount(); j++) {
+		HTp token = infile.token(index, j);
+		if (!token->isKern()) {
+			continue;
+		}
+		if (token->isNull() || token->isRest() || token->isSecondaryTiedNote()) {
+			continue;
+		}
+		if (!hasPitch(token, arrivalB40)) {
+			continue;
+		}
+		HTp prev = token->getPreviousToken();
+		while (prev) {
+			if (prev->isData() && !prev->isNull()) {
+				break;
+			}
+			prev = prev->getPreviousToken();
+		}
+		if (!prev || prev->isRest()) {
+			continue;
+		}
+		if (hasPitch(prev, previousB40)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
+//////////////////////////////
+//
 // Tool_autocadence::prepareExtremisBass -- Get the synthetic lowest-line
 //     events from Tool_extremis, then store the melodic interval from the
 //     previous event on the input line where each note event starts.
 //     Continuation lines of an event (null tokens and tie sustainations)
-//     keep 0 so AuthenticB labels only the bass arrival.
+//     keep 0 so cadence labels only apply to the bass arrival.
 //
 
 void Tool_autocadence::prepareExtremisBass(HumdrumFile& infile) {
 	m_extremisLastmel.clear();
 	m_extremisLastmel.resize(infile.getLineCount(), 0);
+	m_extremisPrevB40.clear();
+	m_extremisPrevB40.resize(infile.getLineCount(), 0);
+	m_extremisB40.clear();
+	m_extremisB40.resize(infile.getLineCount(), 0);
 
 	Tool_extremis extremis;
 	vector<Tool_extremis::SynthEvent> events;
@@ -63335,6 +63973,8 @@ void Tool_autocadence::prepareExtremisBass(HumdrumFile& infile) {
 			// Intervals into or out of a rest are "R" (stored as 0).
 			continue;
 		}
+		m_extremisB40.at(event.startLine) = event.b40;
+		m_extremisPrevB40.at(event.startLine) = previous.b40;
 		string iname = getIntervalName(to_string(event.b40 - previous.b40));
 		int value = 0;
 		if (iname != "R") {
@@ -63393,7 +64033,7 @@ bool Tool_autocadence::hasIncorrectBassizans(int index) {
 //
 // Tool_autocadence::hasClosingVoicesAtArrival -- True when the closing-voice
 //     count at the cadential arrival is greater than 0.  A 0 (or non-data
-//     line) blocks the AuthenticB label.
+//     line) blocks the Cadenze Semplici label.
 //
 
 bool Tool_autocadence::hasClosingVoicesAtArrival(int index) {
@@ -64745,7 +65385,7 @@ void Tool_autocadence::prepareCadenceLabels(void) {
 	{"CLT",  "Leaping Contratenor"},
 	{"CLTz", "Leaping Contratenor"},
 	{"CP",   "Incomplete 9-8-5"},
-	{"Pc",   ""},
+	{"Pc",   "Evaded 9-8-5"},
 	{"CPT",  "9-8-5"},
 	{"CPTz", "9-8-5"},
 	{"CPt",  "Evaded 9-8-5"},
@@ -97230,6 +97870,8 @@ bool Tool_filter::run(HumdrumFileSet& infiles) {
 			RUNTOOL(metlev, infile, commands[i].second, status);
 		} else if (commands[i].first == "metweight") {
 			RUNTOOL(metweight, infile, commands[i].second, status);
+		} else if (commands[i].first == "metpos") {
+			RUNTOOL(metpos, infile, commands[i].second, status);
 		} else if (commands[i].first == "mint") { // humlib version of Humdrum Toolkit mint tool
 			RUNTOOL(mint, infile, commands[i].second, status);
 		} else if (commands[i].first == "mintx") { // humlib cli name
@@ -113514,6 +114156,787 @@ void Tool_metlev::fillVoiceResults(vector<vector<double> >& results,
 	}
 }
 
+
+
+/////////////////////////////////
+//
+// Tool_metpos::Tool_metpos -- Set the recognized options for the tool.
+//
+
+Tool_metpos::Tool_metpos(void) {
+	define("m|meter=s:", "initial meter signature, such as 3/4");
+}
+
+
+
+/////////////////////////////////
+//
+// Tool_metpos::run -- Do the main work of the tool.
+//
+
+bool Tool_metpos::run(HumdrumFileSet& infiles) {
+	bool status = true;
+	for (int i=0; i<infiles.getCount(); i++) {
+		status &= run(infiles[i]);
+	}
+	return status;
+}
+
+
+
+bool Tool_metpos::run(const string& indata, ostream& out) {
+	HumdrumFile infile(indata);
+	return run(infile, out);
+}
+
+
+
+bool Tool_metpos::run(HumdrumFile& infile, ostream& out) {
+	bool status = run(infile);
+	if (hasAnyText()) {
+		getAllText(out);
+	} else {
+		out << infile;
+	}
+	return status;
+}
+
+
+
+bool Tool_metpos::run(HumdrumFile& infile) {
+	initialize();
+	processFile(infile);
+	return !hasError();
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::getMetricPositions -- Metric position of every line of a
+//     file, as it would be printed in the **metpos spine, without printing
+//     anything: positions is indexed by line, with 0 for non-data lines and
+//     data lines that have no metric position (including the lines after
+//     an error, which stays available from the error text).
+//
+
+void Tool_metpos::getMetricPositions(HumdrumFile& infile, vector<int>& positions) {
+	initialize();
+	processFile(infile);
+	positions = m_lineValues;
+	m_humdrum_text.str("");
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::initialize --
+//
+
+void Tool_metpos::initialize(void) {
+	m_meterOption = getString("meter");
+	m_signatureDuration = 0;
+	m_signatureBeats = 0;
+	m_measureDuration = 0;
+	m_binaryQ = false;
+	m_pulseQ = false;
+	m_template = NULL;
+	m_omet.clear();
+	m_met.clear();
+	m_firstBarYet = false;
+	m_firstInterpretationYet = false;
+	m_barStart = 0;
+	m_barEnd = 0;
+	m_nextBarTime.clear();
+	m_anacrusis.clear();
+	m_infile = NULL;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::processFile -- Process the input one record at a time.
+//     When an error stops the analysis, the records collected before the
+//     first barline are still printed, as in the original.
+//
+
+void Tool_metpos::processFile(HumdrumFile& infile) {
+	m_infile = &infile;
+	m_lineValues.assign(infile.getLineCount(), 0);
+	if (getBoolean("meter")) {
+		if (!regex_match(m_meterOption, regex("^[1-9]+/[1-9]+[.]*$"))) {
+			m_error_text << "metpos: ERROR: Invalid meter specified: "
+			             << m_meterOption << endl;
+			return;
+		}
+	}
+
+	// Time of the next barline (or the end of the music) after each line.
+	m_nextBarTime.resize(infile.getLineCount());
+	HumNum next = infile.getScoreDuration();
+	for (int i=infile.getLineCount()-1; i>=0; i--) {
+		m_nextBarTime[i] = next;
+		if (infile[i].isBarline()) {
+			next = infile[i].getDurationFromStart();
+		}
+	}
+
+	bool ok = true;
+	if (!m_meterOption.empty()) {
+		ok = setMeter(m_meterOption, 0);
+	}
+
+	for (int i=0; ok && (i<infile.getLineCount()); i++) {
+		ok = processLine(infile, i);
+	}
+
+	if (!m_anacrusis.empty()) {
+		printAnacrusis(infile.getScoreDuration());
+	}
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::processLine -- Returns false when an error stops the analysis.
+//
+
+bool Tool_metpos::processLine(HumdrumFile& infile, int index) {
+	const string& line = infile[index];
+	vector<string> fields;
+	size_t start = 0;
+	while (true) {
+		size_t tab = line.find('\t', start);
+		if (tab == string::npos) {
+			fields.push_back(line.substr(start));
+			break;
+		}
+		fields.push_back(line.substr(start, tab - start));
+		start = tab + 1;
+	}
+
+	if (line.compare(0, 2, "!!") == 0) {
+		emit(line);
+		return true;
+	}
+	if (line.compare(0, 1, "!") == 0) {
+		emit(line + "\t!");
+		return true;
+	}
+	if (line.compare(0, 1, "*") == 0) {
+		return processInterpretation(infile, index, fields);
+	}
+	if (fields[0].find('=') != string::npos) {
+		processBarline(infile, index, fields);
+		return true;
+	}
+	return processData(infile, index);
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::processInterpretation --
+//
+
+bool Tool_metpos::processInterpretation(HumdrumFile& infile, int index,
+		const vector<string>& fields) {
+	static const regex tandemRe("tb[0-9]|M[0-9]");
+	const string& line = infile[index];
+
+	for (const string& field : fields) {
+		if ((field.compare(0, 6, "*omet(") == 0) && (field.back() == ')')) {
+			m_omet = field.substr(6, field.size() - 7);
+		} else if ((field.compare(0, 5, "*met(") == 0) && (field.back() == ')')) {
+			m_met = field.substr(5, field.size() - 6);
+		}
+	}
+
+	bool allExclusive = true;  // every field is **name
+	bool exclusiveOrNull = true;  // every field is **name or *
+	bool allNull = true;  // every field is *
+	bool allTerminators = true;  // every field is *-
+	for (const string& field : fields) {
+		bool exclusive = (field.size() > 2) && (field.compare(0, 2, "**") == 0);
+		bool null = (field == "*");
+		if (!exclusive) {
+			allExclusive = false;
+		}
+		if (!(exclusive || null)) {
+			exclusiveOrNull = false;
+		}
+		if (!null) {
+			allNull = false;
+		}
+		if (field != "*-") {
+			allTerminators = false;
+		}
+	}
+
+	if (allExclusive) {
+		emit(line + "\t**metpos");
+		m_firstInterpretationYet = true;
+		m_firstBarYet = false;
+		printAnacrusis(infile[index].getDurationFromStart());
+		m_omet.clear();
+		m_met.clear();
+	} else if (exclusiveOrNull && !allNull) {
+		// A new exclusive interpretation after spine additions.
+		if (!m_firstInterpretationYet) {
+			emit(line + "\t**metpos");
+			m_firstInterpretationYet = true;
+		} else {
+			emit(line + "\t*");
+		}
+	} else if (allTerminators) {
+		emit(line + "\t*-");
+		m_firstInterpretationYet = false;
+		m_firstBarYet = false;
+		printAnacrusis(infile[index].getDurationFromStart());
+	} else if (regex_search(line, tandemRe)) {
+		return processTandem(infile, index, fields);
+	} else {
+		emit(line + "\t*");
+	}
+	return true;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::processTandem -- Store meter (*M) interpretations, copying
+//     the first meter or timebase (*tb) interpretation into the **metpos
+//     spine.  The original printed the line once for every spine that
+//     contained one (so usually several times), and dropped lines such as
+//     *MM120 that contained none; here each line is printed once.
+//
+
+bool Tool_metpos::processTandem(HumdrumFile& infile, int index,
+		const vector<string>& fields) {
+	static const regex timebaseRe("^\\*tb[0-9]+$");
+	static const regex meterRe("^\\*M(([1-9]+((\\+)([1-9]+))*(\\/)([0-9]+)(\\.)*)|(\\?)|(X))$");
+	int lineNumber = index + 1;
+
+	string suffix;
+	string meter;
+	for (int j=0; j<(int)fields.size(); j++) {
+		bool timebaseQ = regex_match(fields[j], timebaseRe);
+		bool meterQ = !timebaseQ && regex_match(fields[j], meterRe);
+		if (meterQ) {
+			if (meter.empty()) {
+				meter = fields[j];
+			} else if (fields[j] != meter) {
+				m_error_text << "metpos: ERROR: Different meter signatures in "
+				             << "concurrent spines at line: " << lineNumber << endl;
+				return false;
+			}
+		}
+		if ((timebaseQ || meterQ) && suffix.empty()) {
+			suffix = fields[j];
+		}
+	}
+	emit(infile[index] + "\t" + (suffix.empty() ? "*" : suffix));
+
+	if (!meter.empty()) {
+		return setMeter(meter.substr(2), lineNumber);
+	}
+	return true;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::processBarline -- The **metpos spine copies the barline
+//     of the first spine.  A final barline (==) does not need a complete
+//     measure, and ends the measure numbering so that following data are
+//     treated as a new anacrusis.
+//
+
+void Tool_metpos::processBarline(HumdrumFile& infile, int index,
+		const vector<string>& fields) {
+	HumNum time = infile[index].getDurationFromStart();
+	bool finalQ = fields[0].find("==") != string::npos;
+	if (!m_firstBarYet) {
+		printAnacrusis(time);
+		m_firstBarYet = !finalQ;
+	} else if (time - m_barStart < m_measureDuration) {
+		if (!finalQ) {
+			m_warning_text << "metpos: WARNING: Unexpected barline encountered in line "
+			               << (index + 1) << ".\n                 Measure is shorter "
+			               << "than the meter signature." << endl;
+		} else {
+			m_firstBarYet = false;
+			printAnacrusis(time);
+		}
+	} else if (finalQ) {
+		m_firstBarYet = false;
+		printAnacrusis(time);
+	}
+	m_humdrum_text << infile[index] << "\t" << fields[0] << "\n";
+	m_barStart = time;
+	m_barEnd = m_nextBarTime.at(index);
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::processData --
+//
+
+bool Tool_metpos::processData(HumdrumFile& infile, int index) {
+	if (!m_firstBarYet) {
+		m_anacrusis.emplace_back(infile[index], index);
+		return true;
+	}
+	updateMeasureHierarchy(m_barEnd - m_barStart);
+	HumNum position = infile[index].getDurationFromStart() - m_barStart;
+	if ((m_measureDuration > 0) && (position >= m_measureDuration)) {
+		m_error_text << "metpos: ERROR: Measure is longer than the meter signature "
+		             << "in input line: " << (index + 1) << endl;
+		return false;
+	}
+	m_humdrum_text << infile[index] << "\t" << getPositionText(index, position) << "\n";
+	return true;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::emit -- Print a non-data record, or store it until the first
+//     barline when it comes before the first barline.
+//
+
+void Tool_metpos::emit(const string& text) {
+	if (m_firstBarYet) {
+		m_humdrum_text << text << "\n";
+	} else {
+		m_anacrusis.emplace_back(text, -1);
+	}
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::printAnacrusis -- Print the stored records.  Data records
+//     are aligned with the end of a measure that ends at endTime.  When
+//     they last longer than the time signature (or there is none), they
+//     form a measure of their own instead, which starts with the first
+//     stored data record (see updateMeasureHierarchy()).
+//
+
+void Tool_metpos::printAnacrusis(HumNum endTime) {
+	HumNum measureStart = -1;
+	for (auto& record : m_anacrusis) {
+		if (record.second >= 0) {
+			measureStart = (*m_infile)[record.second].getDurationFromStart();
+			break;
+		}
+	}
+	if ((m_signatureDuration > 0) && (endTime - measureStart <= m_signatureDuration)) {
+		useHierarchy(m_signatureBeats, m_signatureDuration);
+		measureStart = -1;
+	} else {
+		updateMeasureHierarchy(endTime - measureStart);
+	}
+	for (auto& record : m_anacrusis) {
+		if (record.second < 0) {
+			m_humdrum_text << record.first << "\n";
+			continue;
+		}
+		HumNum start = (*m_infile)[record.second].getDurationFromStart();
+		HumNum position;
+		if (measureStart >= 0) {
+			position = start - measureStart;
+		} else {
+			position = m_measureDuration - (endTime - start);
+		}
+		m_humdrum_text << record.first << "\t" << getPositionText(record.second, position) << "\n";
+	}
+	m_anacrusis.clear();
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::setMeter -- Set the meter for getMetricPosition(), such as
+//     "3/4" or "4/2" (without "*M").  Meters with 2, 3, 4, 6, 9 or 12 beats
+//     are handled; other meters give no metric positions, and irregular
+//     meters (5, 7, 10, 11 or more than 12 beats) are an error.
+//
+
+bool Tool_metpos::setMeter(const string& meter, int lineNumber) {
+	m_signatureDuration = 0;
+	m_signatureBeats = 0;
+	useHierarchy(0, 0);
+
+	size_t slash = meter.find('/');
+	if (slash == string::npos) {
+		return true;
+	}
+	string numerator = meter.substr(0, slash);
+	string denominator = meter.substr(meter.rfind('/') + 1);
+	if (numerator.find_first_not_of("0123456789") != string::npos) {
+		return true;
+	}
+	int top = atoi(numerator.c_str());
+	int bottom = atoi(denominator.c_str());
+	if (denominator.find('.') != string::npos) {
+		// Double-dotted denominators are not handled correctly (as in the
+		// original).
+		top *= 3;
+		bottom *= 2;
+	}
+
+	if ((top == 5) || (top == 7) || (top == 10) || (top == 11) || (top >= 13)) {
+		m_error_text << "metpos: ERROR:  Cannot handle irregular meter: " << meter
+		             << " in line " << lineNumber << "." << endl;
+		return false;
+	}
+	if (bottom <= 0) {
+		return true;
+	}
+	m_signatureDuration = HumNum(top * 4, bottom);
+	m_signatureBeats = top;
+	useHierarchy(m_signatureBeats, m_signatureDuration);
+	return true;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::useHierarchy -- Make getMetricPosition() use a measure of
+//     the given duration (in quarter notes) organized like a meter with the
+//     given number of beats: binary for 2 or 4 beats, or the template of
+//     the original for 3, 6, 9 or 12 beats.  A binary measure whose length
+//     is not a power of two (such as 5 semibreves) uses a semibreve pulse
+//     instead.  Other values give no metric positions.
+//
+
+void Tool_metpos::useHierarchy(int beats, HumNum duration) {
+	static const vector<int> simpleTriple      = makeTemplate(96,  7, {2, 4, 8, 16, 32});
+	static const vector<int> compoundDuple     = makeTemplate(96,  7, {2, 4, 8, 16, 48});
+	static const vector<int> compoundTriple    = makeTemplate(108, 6, {2, 4, 12, 36});
+	static const vector<int> compoundQuadruple = makeTemplate(96,  7, {2, 4, 8, 24, 48});
+
+	m_measureDuration = duration;
+	m_binaryQ = false;
+	m_pulseQ = false;
+	m_template = NULL;
+	switch (beats) {
+		case 2:
+		case 4:
+			if (duration.isPowerOfTwo()) {
+				m_binaryQ = true;
+			} else {
+				usePulse(duration);
+			}
+			break;
+		case 3:  m_template = &simpleTriple;        break;
+		case 6:  m_template = &compoundDuple;       break;
+		case 9:  m_template = &compoundTriple;      break;
+		case 12: m_template = &compoundQuadruple;   break;
+	}
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::updateMeasureHierarchy -- Choose the hierarchy of a measure
+//     with the given length from the barlines.  The time signature is used
+//     unless the measure is longer than it (or there is no time signature,
+//     or it has no length, such as *M?).  Then the measure has the length
+//     from the barlines, and its organization comes from the original
+//     mensuration sign (*omet), then the modern one (*met), then the time
+//     signature, and otherwise a semibreve pulse.
+//
+
+void Tool_metpos::updateMeasureHierarchy(HumNum length) {
+	if ((length <= 0) || ((m_signatureDuration > 0) && (length <= m_signatureDuration))) {
+		useHierarchy(m_signatureBeats, m_signatureDuration);
+		return;
+	}
+	int beats = getSignBeats(m_omet);
+	if (beats == 0) {
+		beats = getSignBeats(m_met);
+	}
+	if (beats == 0) {
+		beats = m_signatureBeats;
+	}
+	if (beats == 0) {
+		usePulse(length);
+		return;
+	}
+	useHierarchy(beats, length);
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::usePulse -- Make getMetricPosition() use a semibreve pulse
+//     in a measure of the given duration (in quarter notes), for measures
+//     without a regular metric organization.
+//
+
+void Tool_metpos::usePulse(HumNum duration) {
+	m_measureDuration = duration;
+	m_binaryQ = false;
+	m_pulseQ = true;
+	m_template = NULL;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::getSignBeats -- Organization of a measure implied by a
+//     mensuration sign (the text inside *omet() or *met()), given as the
+//     number of beats of the equivalent meter for useHierarchy():
+//        3 for proportions (signs with a 3) and tempus perfectum (O)
+//        9 for tempus perfectum with prolatio maior (O.)
+//        6 for prolatio maior (C.)
+//        2 for C, C| and c (duple at every level)
+//     Returns 0 for other signs, which do not give the organization.
+//
+
+int Tool_metpos::getSignBeats(const string& sign) {
+	bool threeQ   = sign.find('3') != string::npos;
+	bool perfectQ = sign.find_first_of("Oo") != string::npos;
+	bool dotQ     = sign.find('.') != string::npos;
+	bool cQ       = sign.find_first_of("Cc") != string::npos;
+	if (threeQ) {
+		return 3;
+	}
+	if (perfectQ) {
+		return dotQ ? 9 : 3;
+	}
+	if (cQ) {
+		return dotQ ? 6 : 2;
+	}
+	return 0;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::getGridPosition -- Metric position of a time (in quarter
+//     notes) from the start of the measure in the meter given to setMeter():
+//     1 for the start of the measure, and larger numbers for weaker
+//     positions.  Returns 0 when the position is not in the metric
+//     hierarchy, such as a triplet in a duple meter (see
+//     getMetricPosition() for those).
+//
+//     The measure is the one from setMeter(), or, inside the score, the
+//     current measure (see updateMeasureHierarchy()).
+//
+//     In 2-beat and 4-beat simple meters, the hierarchy is binary: a
+//     position that is a/b of the measure (in lowest terms) is
+//     1 + log2(b).  Other meters look up the position in a template of the
+//     measure with 96 (or 108 for 9 beats) slots.  With a semibreve pulse
+//     (see usePulse()), every semibreve after the start of the measure is
+//     2, other minims 3, other crotchets 4, and so on, as in a 4/2 measure.
+//
+
+int Tool_metpos::getGridPosition(HumNum position) {
+	if (m_measureDuration <= 0) {
+		return 0;
+	}
+	HumNum fraction = position / m_measureDuration;
+	if ((fraction < 0) || (fraction >= 1)) {
+		return 0;
+	}
+	if (m_pulseQ) {
+		if (position == 0) {
+			return 1;
+		}
+		// Find the largest power-of-two duration that position is a
+		// multiple of: 2^exponent quarter notes.
+		int numerator = position.getNumerator();
+		int denominator = position.getDenominator();
+		int exponent = 0;
+		while (denominator > 1) {
+			if (denominator % 2) {
+				return 0;
+			}
+			denominator /= 2;
+			exponent--;
+		}
+		while ((numerator % 2 == 0) && (exponent < 2)) {
+			numerator /= 2;
+			exponent++;
+		}
+		// A semibreve (2^2 quarter notes) or more is 2.
+		return 4 - exponent;
+	}
+	if (m_binaryQ) {
+		int denominator = fraction.getDenominator();
+		int value = 1;
+		while (denominator > 1) {
+			if (denominator % 2) {
+				return 0;
+			}
+			denominator /= 2;
+			value++;
+		}
+		return value;
+	}
+	if (m_template) {
+		HumNum slot = fraction * ((int)m_template->size() - 2);
+		if (!slot.isInteger()) {
+			return 0;
+		}
+		return m_template->at(slot.getNumerator() + 1);
+	}
+	return 0;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::getMetricPosition -- Metric position of a time (in quarter
+//     notes) from the start of the measure (see getGridPosition()).
+//     Positions off the metric hierarchy that belong to a triplet get the
+//     metric position of the duple note value that the triplet replaces,
+//     which is 3/2 of the triplet note value: in 4/4, the inner notes of
+//     half-note triplets get 2 like half notes, those of quarter-note
+//     triplets 3 like quarter notes, and those of eighth-note triplets 4
+//     like eighth notes.  A position can belong to triplets of several
+//     sizes (2/3 of a quarter note is in both eighth-note and quarter-note
+//     triplets), so the triplet note value is the largest one that fits
+//     the position and is no longer than duration, the shortest note value
+//     starting at that time (0 for no limit).  Other positions, such as
+//     quintuplets or triplets within triplets, return 0.
+//
+
+int Tool_metpos::getMetricPosition(HumNum position, HumNum duration) {
+	int value = getGridPosition(position);
+	if ((value > 0) || (position <= 0)) {
+		return value;
+	}
+
+	// The position is n/(3 * 2^x) quarter notes with n not a multiple of 3.
+	int numerator = position.getNumerator();
+	int denominator = position.getDenominator();
+	if (denominator % 3) {
+		return 0;
+	}
+	denominator /= 3;
+	int x = 0;
+	while (denominator > 1) {
+		if (denominator % 2) {
+			return 0;
+		}
+		denominator /= 2;
+		x++;
+	}
+
+	// Triplet note value 2^k/3 quarter notes: the position must be a
+	// multiple of it, and it must be no longer than duration.
+	int k = -x;
+	while (numerator % 2 == 0) {
+		numerator /= 2;
+		k++;
+	}
+	if (duration > 0) {
+		while (HumNum(1 << max(k, 0), 3 << max(-k, 0)) > duration) {
+			k--;
+			if (k < -16) {
+				return 0;
+			}
+		}
+	}
+
+	// The duple note value replaced by the triplet: 2^(k-1) quarter notes.
+	HumNum replaced = (k >= 1) ? HumNum(1 << (k - 1), 1) : HumNum(1, 1 << (1 - k));
+	return getGridPosition(replaced);
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::getShortestDuration -- Shortest note or rest value (as
+//     written, not including ties) starting on a data line, or 0 when
+//     there is none.
+//
+
+HumNum Tool_metpos::getShortestDuration(HumdrumFile& infile, int index) {
+	HumNum output = 0;
+	for (int j=0; j<infile[index].getFieldCount(); j++) {
+		HTp token = infile.token(index, j);
+		if (!token->isKern() || token->isNull()) {
+			continue;
+		}
+		HumNum duration = token->getDuration();
+		if ((duration > 0) && ((output == 0) || (duration < output))) {
+			output = duration;
+		}
+	}
+	return output;
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::getPositionText -- Metric position of the data line at index
+//     (position quarter notes from the start of its measure) as printed in
+//     the **metpos spine, or "." when there is none.  The value is also
+//     stored for getMetricPositions().
+//
+
+string Tool_metpos::getPositionText(int index, HumNum position) {
+	int value = getMetricPosition(position, getShortestDuration(*m_infile, index));
+	m_lineValues.at(index) = max(value, 0);
+	if (value <= 0) {
+		return ".";
+	}
+	return to_string(value);
+}
+
+
+
+//////////////////////////////
+//
+// Tool_metpos::makeTemplate -- Metric hierarchy of a measure divided into
+//     size equal slots (indexed from 1), as built by the original.  The
+//     finest slots get base, odd slots get base-1, and the slot after each
+//     multiple of divisors[d] (d >= 1) gets base-1-d.  Slot 1 is 1.  The
+//     vector has two extra entries, and 0 marks unset entries.
+//
+
+vector<int> Tool_metpos::makeTemplate(int size, int base, const vector<int>& divisors) {
+	vector<int> output(size + 2, 0);
+	for (int i=1; i<=size; i++) {
+		output[i] = base;
+	}
+	for (int i=2; i<=size; i+=2) {
+		output[i-1] = base - 1;
+	}
+	for (int d=1; d<(int)divisors.size(); d++) {
+		for (int i=1; i<=size; i++) {
+			if (i % divisors[d] == 0) {
+				output[i+1] = base - 1 - d;
+			}
+		}
+	}
+	output[1] = 1;
+	return output;
+}
 
 
 
@@ -130545,12 +131968,35 @@ void Tool_pliner::initialize(void) {
 //
 
 void Tool_pliner::processFile(HumdrumFile& infile) {
+	map<int, map<int, string>> insertions;
+	getPlines(infile, insertions);
+	if (m_poem.empty()) {
+		m_humdrum_text << infile;
+		return;
+	}
+	emitOutput(infile, insertions);
+}
+
+
+
+//////////////////////////////
+//
+// Tool_pliner::getPlines -- Compute the *pline annotations without printing
+//    them, so that other tools can use the analysis directly.  plines is
+//    indexed by the data line where each poetic line starts in a voice,
+//    then by track (both the **kern and its **text track), with the
+//    *pline token text as the value.  plines is empty when no poem can
+//    be extracted from the score.
+//
+
+void Tool_pliner::getPlines(HumdrumFile& infile, map<int, map<int, string>>& plines) {
+	plines.clear();
 	m_poem.clear();
 	m_voices.clear();
 
 	bool havePoem = extractPoem(infile, m_poem);
 	if (!havePoem) {
-		m_humdrum_text << infile;
+		m_poem.clear();
 		return;
 	}
 
@@ -130565,8 +132011,6 @@ void Tool_pliner::processFile(HumdrumFile& infile) {
 			cerr << endl;
 		}
 	}
-
-	map<int, map<int, string>> insertions;
 
 	for (Voice& voice : m_voices) {
 		vector<SungWord> words;
@@ -130596,12 +132040,10 @@ void Tool_pliner::processFile(HumdrumFile& infile) {
 			string modifier = getModifier(m_poem, span);
 			string text = "*pline:" + to_string(span.line + 1) + modifier;
 			int li = span.startToken->getLineIndex();
-			insertions[li][kernTrack] = text;
-			insertions[li][textTrack] = text;
+			plines[li][kernTrack] = text;
+			plines[li][textTrack] = text;
 		}
 	}
-
-	emitOutput(infile, insertions);
 }
 
 
